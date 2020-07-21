@@ -1,0 +1,27 @@
+var structolc_1_1v2d__generic =
+[
+    [ "v2d_generic", "structolc_1_1v2d__generic.html#aba35d326b62454a5fbdeea4220438784", null ],
+    [ "v2d_generic", "structolc_1_1v2d__generic.html#a2fc62e52adae5f9e4138adf073afddb0", null ],
+    [ "v2d_generic", "structolc_1_1v2d__generic.html#a7897de7e3e5f2a0e6ba1d2aef2015fce", null ],
+    [ "cross", "structolc_1_1v2d__generic.html#ab32b6239e2765cf1ed4dfc2b30905eb6", null ],
+    [ "dot", "structolc_1_1v2d__generic.html#a327a1990529802a8805c2acc04a523fc", null ],
+    [ "mag", "structolc_1_1v2d__generic.html#a50aa929dcaada4c61a54fe12b8730847", null ],
+    [ "mag2", "structolc_1_1v2d__generic.html#a502035deda74416271ea260558571247", null ],
+    [ "norm", "structolc_1_1v2d__generic.html#acb5aa0a6190d18fdecae4e1e353ca3e1", null ],
+    [ "operator v2d_generic< double >", "structolc_1_1v2d__generic.html#a5b722f332f64d260741ef8322cca5cce", null ],
+    [ "operator v2d_generic< float >", "structolc_1_1v2d__generic.html#a7fd9786ec8121d50addc3dd624ca21eb", null ],
+    [ "operator v2d_generic< int32_t >", "structolc_1_1v2d__generic.html#a2bf267ac209cca361df72649a5aac92c", null ],
+    [ "operator*", "structolc_1_1v2d__generic.html#a542487700e63b2e30940d64b75c3d3db", null ],
+    [ "operator*", "structolc_1_1v2d__generic.html#a78e7362a3b955735c0389c6a5c7b32f0", null ],
+    [ "operator*=", "structolc_1_1v2d__generic.html#a35c81946f320da79fa5a33e595873252", null ],
+    [ "operator+", "structolc_1_1v2d__generic.html#a5ae3f55fd12af9bf44a2837ad76ea7dd", null ],
+    [ "operator+=", "structolc_1_1v2d__generic.html#ac57326846384068beaaddec0674b65d2", null ],
+    [ "operator-", "structolc_1_1v2d__generic.html#a64e053d62d2826193f6a058ee120c6e2", null ],
+    [ "operator-=", "structolc_1_1v2d__generic.html#af3e8b94c4921f8d81b4112b319bd7f6d", null ],
+    [ "operator/", "structolc_1_1v2d__generic.html#a1f1138ee06adae0eaffe900b0437b896", null ],
+    [ "operator/", "structolc_1_1v2d__generic.html#adcf0004e01ba1d8c813cdcb6525eb1c6", null ],
+    [ "operator/=", "structolc_1_1v2d__generic.html#a88a5aa098b5ada7667a7900a0bc9bba2", null ],
+    [ "perp", "structolc_1_1v2d__generic.html#aba20982b1d6692c490963279be150a0e", null ],
+    [ "x", "structolc_1_1v2d__generic.html#a2c6ce2738720f5e098c7d0bf17f33807", null ],
+    [ "y", "structolc_1_1v2d__generic.html#a5a9c94207b2163c69a39190c320fcbdf", null ]
+];
