@@ -4,11 +4,11 @@ Tile::Tile(){}
 Tile::~Tile(){}
 
 
-olc::vf2d Tile::getPosition(){
+olc::vf2d Tile::getPosition() const {
     return pos;
 }
 
-int Tile::getSize() const {
+olc::vf2d Tile::getSize() const {
     return size;
 }
 
@@ -28,7 +28,7 @@ void Tile::setPosition(olc::vf2d pos_){
     pos = pos_;
 }
 
-void Tile::setSize(int size_){
+void Tile::setSize(olc::vf2d size_){
     size = size_;
 }
 

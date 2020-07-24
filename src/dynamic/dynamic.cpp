@@ -22,7 +22,7 @@ direction Dynamic::getDir() const {
     return dir;
 }
 
-int Dynamic::getSize() const {
+olc::vf2d Dynamic::getSize() const {
     return size;
 }
 
@@ -42,6 +42,6 @@ void Dynamic::setDir(direction dir_){
     dir = dir_;
 }
 
-void Dynamic::setSize(int size_){
+void Dynamic::setSize(olc::vf2d size_){
     size = size_;
 }

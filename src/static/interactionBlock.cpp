@@ -6,7 +6,7 @@ InteractionBlock::~InteractionBlock(){}
 void InteractionBlock::interact(){}
 
 Key::Key(){
-    tileType = 1;
+    tileType = 2;
     SolidTile = true;
 }
 

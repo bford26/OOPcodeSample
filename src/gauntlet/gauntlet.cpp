@@ -25,17 +25,15 @@ bool Gauntlet::OnUserCreate(){
     decalList[6] = new olc::Decal(Resources::get().getSprite("player"));
     decalList[7] = new olc::Decal(Resources::get().getSprite("ghost"));
     decalList[8] = new olc::Decal(Resources::get().getSprite("demon"));
-    
 
     p1 = new Player();
     p1->setSpeed(100);
-    p1->setPosition( (float) 16*16 , (float) 15*16);
-    /*
-    This will load the level from the formatted txt file under "data/levels/".
+    p1->setHp(500);
     
+    /*
     Typically a game menu would be used to choose the desired level, but for a simple demo game states are not required, the game just starts into a level automatically so the level can be hardcoded.
     */ 
-    loadLevel(0);
+    loadLevel(1);
 
     return true;
 }
@@ -44,44 +42,43 @@ bool Gauntlet::OnUserUpdate(float fElapsedTime){
 
 
     // this will update the player based on the input keys W,A,S,D 
-    // updatePlayer(fElapsedTime);
+    updatePlayer(fElapsedTime);
     // updateMobs(fElapsedTime);
     // updateProjectiles(fElapsedTime);
-
-
-    // panFunc();
-
-    // ConvertTilesToPolyMap(0,0,horTiles,vertTiles, 16.0f, horTiles);
-
     // utilFunc(fElapsedTime);
 
-    olc::vf2d vel;
+    DrawDecals();
 
-    if (GetKey(olc::Key::W).bHeld) vel.y = -100.0f;
-    if (GetKey(olc::Key::S).bHeld) vel.y = +100.0f;
-    if (GetKey(olc::Key::A).bHeld) vel.x = -100.0f;
-    if (GetKey(olc::Key::D).bHeld) vel.x = +100.0f;
+    // Draw info box
 
-    p1->setVelocity(vel.x, vel.y);
-
-    // update player pos
-    olc::vf2d pPos = p1->getPosition();
-    olc::vf2d pVel = p1->getVelocity();
-    pPos = pPos + pVel * fElapsedTime;
-    p1->setPosition(pPos.x, pPos.y);
-
-    Clear(olc::DARK_BLUE);
-
-    DrawRect(pPos.x, pPos.y, 16, 16, olc::WHITE);
-
-
-
-    // DrawDecals();
+    FillRect(16,16,16,32,olc::BLACK);
+    DrawStringDecal({26,16},std::to_string(p1->getHp()),olc::WHITE, {1,1});
+    DrawStringDecal({26,24},std::to_string(p1->keyValue), olc::WHITE, {1,1});
+    DrawStringDecal({40,24},std::to_string(p1->keyValue), olc::WHITE, {1,1});
 
     
 
-    // std::cout << (int) p1->getPosition().x << " , " << (int) p1->getPosition().y << std::endl;
 
+    // LAYERS
+    // - floor
+    // - walls
+    // - doors
+    // - mobs, projectiles
+
+    int floorLay, dynLay;
+
+    floorLay = CreateLayer();
+    SetDrawTarget(floorLay);
+    for(int i=0; i<16; i++)
+        for(int j=0; j<15; j++)
+            DrawDecal({i*16,j*16},decalList[1]);
+    SetDrawTarget(nullptr);
+
+    dynLay = CreateLayer();
+    SetDrawTarget(dynLay);
+    for(auto m : mobList){
+        DrawDecal(m.getPosition(),decalList[m.getType()]);
+    }
 
     if(GetKey(olc::ESCAPE).bPressed){
         return false;
@@ -113,7 +110,7 @@ void Gauntlet::DrawDecals(){
     int nVisTilesY = ScreenHeight()/16;
 
     int type;
-    int size = gameObjects[0]->getSize();
+    olc::vf2d size = gameObjects[0]->getSize();
     olc::vf2d playerPosition = p1->getPosition();
     olc::vf2d drawPosition;
 
@@ -153,7 +150,6 @@ void Gauntlet::DrawDecals(){
     if(fOffsetY > vertTiles - nVisTilesY) fOffsetY = vertTiles - nVisTilesY;
 
 
-
     // so tiles move smooth!
     fTileOffsetX = (fOffsetX - (int)fOffsetX)*16;
     fTileOffsetY = (fOffsetY - (int)fOffsetY)*16;
@@ -170,7 +166,7 @@ void Gauntlet::DrawDecals(){
             if(type >= decalNum || type < 0)
                 type = 0;
 
-            DrawDecal( { (float) i*size - fTileOffsetX , (float)j*size - fTileOffsetY } , decalList[type]);
+            DrawDecal( { (float) i*16 - fTileOffsetX , (float)j*16 - fTileOffsetY } , decalList[type]);
 
         }
 
@@ -179,24 +175,24 @@ void Gauntlet::DrawDecals(){
     float offx = 0 , offy = 0;
 
 
-    int VisTilesX = ScreenWidth() / size;
-    int VisTilesY = ScreenHeight() / size;
+    int VisTilesX = ScreenWidth() / 16;
+    int VisTilesY = ScreenHeight() / 16;
 
     float xScreenOffset = VisTilesX / 2.0f;
     float yScreenOffset = VisTilesY / 2.0f;
 
 
-    if(playerPosition.x < xScreenOffset*size)
-        offx = xScreenOffset*size-playerPosition.x;
-    else if(playerPosition.x > (horTiles - xScreenOffset)*size)
-        offx = (horTiles - xScreenOffset)*size - playerPosition.x;
+    if(playerPosition.x < xScreenOffset*16)
+        offx = xScreenOffset*16-playerPosition.x;
+    else if(playerPosition.x > (horTiles - xScreenOffset)*16)
+        offx = (horTiles - xScreenOffset)*16 - playerPosition.x;
     else
         offx = 0;
 
-    if(playerPosition.y < yScreenOffset*size)
-        offy = yScreenOffset*size-playerPosition.y;
-    else if(playerPosition.y > (vertTiles - yScreenOffset)*size)
-        offy = (vertTiles - yScreenOffset)*size - playerPosition.y;
+    if(playerPosition.y < yScreenOffset*16)
+        offy = yScreenOffset*16-playerPosition.y;
+    else if(playerPosition.y > (vertTiles - yScreenOffset)*16)
+        offy = (vertTiles - yScreenOffset)*16 - playerPosition.y;
     else
         offy = 0;
 
@@ -327,109 +323,90 @@ bool Gauntlet::loadLevel(int index){
 void Gauntlet::updatePlayer(float fElapsedTime){
 
     float speed = p1->getSpeed();
-    float playerSize = 16;
+    olc::vf2d vel = {0.0f, 0.0f};
     olc::vf2d pPos = p1->getPosition();
-    olc::vf2d moveDir = { 0.0 , 0.0 };
     direction pDir = p1->getDir();
-
 
     // Here we get the direction the play wants to move
     if(GetKey(olc::S).bHeld || GetKey(olc::S).bPressed){
         
-        moveDir = {0,1};
+        vel += {0.0f, 1.0f};
+        
         p1->setDir(direction::SOUTH);
     }
-    else if(GetKey(olc::W).bHeld || GetKey(olc::W).bPressed){
+    
+    if(GetKey(olc::W).bHeld || GetKey(olc::W).bPressed){
         
-        moveDir = {0,-1};
+        vel += {0.0f , -1.0f};
         p1->setDir(direction::NORTH);    
     }
-    else if(GetKey(olc::A).bHeld || GetKey(olc::A).bPressed){
+    
+    if(GetKey(olc::A).bHeld || GetKey(olc::A).bPressed){
         
-        moveDir = {-1,0};
+        vel += {-1.0f , 0.0f};
         p1->setDir(direction::WEST);
     }
-    else if(GetKey(olc::D).bHeld || GetKey(olc::D).bPressed){
+    
+    if(GetKey(olc::D).bHeld || GetKey(olc::D).bPressed){
         
-        moveDir = {1,0};
+        vel += {1.0f , 0.0f};
         p1->setDir(direction::EAST);
     }
 
+    vel *= speed;
+    p1->setVelocity(vel.x, vel.y);
 
-    olc::vf2d nextPos = pPos + moveDir * speed * fElapsedTime;
+    // sort collisions by distance
+    olc::vf2d cp, cn;
+    float t=0, min_t = INFINITY;
+    std::vector<std::pair<int,float>> z;
 
-    auto DoesCollide = [&](){
+    // work out collisions
 
-        bool bVar = true;
+    /* take the player position, get a chunk of the world around the player
+    then from that chunk add tile that can be interacted with into a vector list
+    then for each object in the list check for collisions
+    */ 
+    
+    int left_bound, right_bound;
+    int top_bound, bot_bound;
 
-        int x0 = nextPos.x/16;
-        int y0 = nextPos.y/16;
+    left_bound  = int( pPos.x / 16) - 3;
+    right_bound = int( pPos.x / 16) + 3;
+    top_bound   = int( pPos.y / 16) - 3;
+    bot_bound   = int( pPos.y / 16) + 3;
 
-        int nidx = (y0-1)*horTiles+x0;
-        int eidx = y0*horTiles+x0+1;
-        int sidx = (y0+1)*horTiles+x0;
-        int widx = y0*horTiles+x0-1;
+    if(left_bound < 0) left_bound = 0;
+    if(right_bound > horTiles) right_bound = horTiles; 
+    if(top_bound < 0) top_bound = 0;
+    if(bot_bound > vertTiles) bot_bound = vertTiles;
 
-        int idxArr[4] = { nidx, eidx, sidx, widx };
-        
-        for( auto idx : idxArr ){
+    for(int i=left_bound; i<right_bound; i++)
+        for(int j=top_bound; j<bot_bound; j++){
 
-            bool bNotSolidTile = gameObjects[idx]->getSolidTile();
-            olc::vf2d tilePos = gameObjects[idx]->getPosition();
-            
+            if(gameObjects[j*horTiles+i]->getType() != 1)
+                if(DynamicVsTile(p1, fElapsedTime, *gameObjects[j*horTiles+i], cp, cn, t)){
 
-            if(!bNotSolidTile){
-                                
-                // this is a solid tile need to check for collision!
-                if( tilePos.x < nextPos.x || nextPos.x < tilePos.x || tilePos.y < nextPos.y || nextPos.y < tilePos.y + 15.0)
-                    // overlap
-                    return true;
-
-            }
-            
-        }
-
-        return false;
-
-    };
-
-
-    bool anyCollide = false;
-
-    anyCollide = DoesCollide();
-
-    if(!anyCollide)
-        p1->setPosition(nextPos.x, nextPos.y);
+                    z.push_back({j*horTiles+i,t});
+                }
+        }   
 
 
+    // sort the list z by distance 
+    std::sort(z.begin(), z.end(), [](const std::pair<int, float>& a, const std::pair<int, float>& b)
+    {
+        return a.second < b.second;
+    });
 
 
+    // resolve collisions in proper order 
+    for(auto j : z)
+        ResolveCollision(p1, fElapsedTime, gameObjects[j.first], j.first);
 
 
-
-    // olc::vf2d nextPos = p1->getPosition() + playerDir * speed * fElapsedTime;
-    // auto DoesCollide = [&](const olc::vf2d& point){
-    //     olc::vi2d testPoint = nextPos/16 + point;
-    //     // if(point.x == -1 && point.y == 0)
-    //     //     testPoint.x += 1;
-    //     // if(point.x == 0 && point.y == -1)
-    //     //     testPoint.y += 1;        
-    //     auto& tile = gameObjects[testPoint.y*horTiles+testPoint.x];
-    //     if(tile->getEntityVsTile()){
-    //         // entityvstile == true, which means it is a fine interaction
-    //         return false;
-    //     }else
-    //         return true;
-    // };
-    // // here we check if the movement in the input direction would create a collision
-    // bool anyCollision = false;
-    // anyCollision |= DoesCollide({0,-1});
-    // anyCollision |= DoesCollide({0,1});
-    // anyCollision |= DoesCollide({-1,0});
-    // anyCollision |= DoesCollide({1,0});
-    // if(!anyCollision){
-    //     p1->setPosition(nextPos.x, nextPos.y);
-    // }
+    // update player pos
+    pPos = pPos + p1->getVelocity() * fElapsedTime;
+    p1->setPosition(pPos.x, pPos.y);    
 
 }
 
@@ -443,351 +420,213 @@ void Gauntlet::updateMobs(float fElapsedTime){
 void Gauntlet::updateProjectiles(float fElapsedTime){
 
     // using the facing direction, move projectile in their direction
+    
 
 }
 
 void Gauntlet::utilFunc(float fElapsedTime){
 
-    float speed = p1->getSpeed();
-    float playerSize = 16;
-    olc::vf2d pPos = p1->getPosition();
-    olc::vf2d moveDir = { 0.0 , 0.0 };
-    direction pDir = p1->getDir();
+    // auto mobAI = [&](Mob &m){
 
 
-    // Here we get the direction the play wants to move
-    if(GetKey(olc::S).bHeld || GetKey(olc::S).bPressed){
+
+    // }
+
+    // for(auto m : mobList){
+
         
-        moveDir += {0,1};
-        p1->setDir(direction::SOUTH);
-    }
-    else if(GetKey(olc::W).bHeld || GetKey(olc::W).bPressed){
-        
-        moveDir += {0,-1};
-        p1->setDir(direction::NORTH);    
-    }
+
+    // }
+
+
+    // for(auto p : projList){
+
+
+
+
+    // }
+
+}
+
+// This function will return a bool if a point provided is inside the bounds of a tile object
+// pTile is pointer to the Tile
+// p is the 2D float passed by reference, which holds the point location
+bool Gauntlet::PointVsTile(const olc::vf2d& p, const Tile* pTile){
+
+    olc::vf2d pos = pTile->getPosition();
+    olc::vf2d size = pTile->getSize();
+
+    return (p.x >= pos.x && p.y >= pos.y && p.x < pos.x + size.x && p.y < pos.y + size.y);
+}
+
+// TileVsTile returns true if the two Tile objects are overlapping
+bool Gauntlet::TileVsTile(const Tile* pt1, const Tile* pt2){
+
+    olc::vf2d t1Pos = pt1->getPosition(), t1Size = pt1->getSize();
+    olc::vf2d t2Pos = pt2->getPosition(), t2Size = pt2->getSize();
+
+    return (t1Pos.x < t2Pos.x + t2Size.x && t1Pos.x + t1Size.x > t2Pos.x && t1Pos.y < t2Pos.y + t2Size.y && t1Pos.y + t1Size.y > t2Pos.y);
+}
+
+// RayVsTile returns true if a ray passing through the passed target Tile
+// this function also calculates the first contact_point for a ray and tile
+// along with the noraml vector for the contact surface 
+bool Gauntlet::RayVsTile(const olc::vf2d& ray_origin, const olc::vf2d& ray_dir, const Tile* target, olc::vf2d& contact_point, olc::vf2d& contact_normal, float& t_hit_near){
+
+    contact_normal = {0,0};
+    contact_point = {0,0};
+
+    olc::vf2d invdir = 1.0f / ray_dir;
+    olc::vf2d t_near, t_far, pos, size;
+
+    pos = target->getPosition();
+    size = target->getSize();
+
+    t_near = (pos - ray_origin) * invdir;
+    t_far = (pos + size - ray_origin) * invdir;
+
+    if(std::isnan(t_far.y) || std::isnan(t_far.x)) return false;
+    if(std::isnan(t_near.y) || std::isnan(t_near.x)) return false;
+
+
+    if(t_near.x > t_far.x) std::swap(t_near.x, t_far.x);
+    if(t_near.y > t_far.y) std::swap(t_near.y, t_far.y);
+
+
+    if(t_near.x > t_far.y || t_near.y > t_far.x) return false;
+
     
+    t_hit_near = std::max(t_near.x, t_near.y);
 
-    if(GetKey(olc::A).bHeld || GetKey(olc::A).bPressed){
-        
-        moveDir += {-1,0};
-        p1->setDir(direction::WEST);
-    }
-    else if(GetKey(olc::D).bHeld || GetKey(olc::D).bPressed){
-        
-        moveDir += {1,0};
-        p1->setDir(direction::EAST);
-    }
+    float t_hit_far = std::min(t_far.x, t_far.y);
 
 
+    if(t_hit_far < 0) return false;
+
+    contact_point = ray_origin + t_hit_far * ray_dir;
+
+    if(t_near.x > t_near.y)
+        if(invdir.x < 0)
+            contact_normal = {1, 0};
+        else
+            contact_normal = {-1, 0};
+    else if( t_near.x < t_near.y)
+        if(invdir.y < 0)
+            contact_normal = {0 , 1};
+        else
+            contact_normal = {0, -1};
+
+
+    return true;     
+
+}
+
+// DynVsTile is used for Dynamic and Tile object collisions 
+// returns true if a collision will happen
+bool Gauntlet::DynamicVsTile(const Dynamic* pDyn, const float fTimeStep, const Tile& pTile, olc::vf2d& contact_point, olc::vf2d& contact_normal, float& contact_time){
+
+    olc::vf2d dynVel = pDyn->getVelocity();
     
-    olc::vf2d nextPos = pPos + moveDir * speed * fElapsedTime;
-
-    // nextPo
-
-    olc::vf2d v1, v2, testPos;
-
-    testPos = { (float) nextPos.x + 15.0f/2.0f , (float) nextPos.y + 15.0f/2.0f };
-
-    auto DoesCollide = [&](){
-
-        // here we basically go thru each edge
-        // then calculate a vector, v1, for
-        for(sEdge &e : vecEdges){
-
-            // v1 is the vector from player position to the edge
-            v1 = e.start - testPos;
-            v2 = e.end - testPos;
-            
-            if( v1.mag() < playerSize * 0.9 || v2.mag() < playerSize * 0.9){
-                return true;
-            }
-            
-        }
-
+    if(dynVel.x == 0 && dynVel.y == 0)
         return false;
-    };
 
+    Tile expanded_target;
+    expanded_target.setPosition(pTile.getPosition() - pDyn->getSize() / 2);
+    expanded_target.setSize(pTile.getSize() + pDyn->getSize());
 
-    bool anyCollide = false;
-
-    anyCollide = DoesCollide();
-
-    if(!anyCollide)
-        p1->setPosition(nextPos.x, nextPos.y);
-
-
+    if(RayVsTile(pDyn->getPosition() + pDyn->getSize()/2 , dynVel * fTimeStep, &expanded_target, contact_point, contact_normal, contact_time))
+        return (contact_time >= 0.0f && contact_time <  1.0f);
+    else
+        return false;
 }
 
-void Gauntlet::panFunc(){
+// Calling this function will make sure no collisions are allowed and that the dynamic obj will still move if collisions occur
+bool Gauntlet::ResolveCollision(Dynamic* pDyn, const float fTimeStep, Tile* pTile, int index){
 
+    olc::vf2d contact_point, contact_normal;
+    float contact_time = 0.0f;
 
-    if (GetKey(olc::Key::A).bHeld) p1->setVelocity( -1.0f * p1->getSpeed() , p1->getVelocity().y);
-    if (GetKey(olc::Key::D).bHeld) p1->setVelocity( p1->getSpeed() , p1->getVelocity().y);
-    if (GetKey(olc::Key::W).bHeld) p1->setVelocity( p1->getVelocity().x , -1.0f * p1->getSpeed());
-    if (GetKey(olc::Key::S).bHeld) p1->setVelocity( p1->getVelocity().x , p1->getSpeed());
+    if (DynamicVsTile(pDyn, fTimeStep, *pTile, contact_point, contact_normal, contact_time)) {
 
+        int tileType = pTile->getType();
 
-    olc::vf2d cp, cn;
-    float t=0, min_t = INFINITY;
-    std::vector<std::pair<int, float>> z;
+        switch(tileType){
 
-    for(size_t i = 1; i < 10; i++ ){
+            // key
+            case 2:
+                // add 1 point to key value
+                p1->keyValue++;
 
+                // remove key and replace with floor
+                gameObjects[index]->setType(1);
+                // delete gameObjects[index];
+                // gameObjects[index] = new Floor();
+                break;
 
+            // door
+            case 3:
+                if(p1->keyValue > 0){
+                    p1->keyValue--;
 
-    }
+                    // remove door
+                    gameObjects[index]->setType(1);
 
-
-
-
-}
-
-void Gauntlet::ConvertTilesToPolyMap(int sx, int sy, int w, int h, float fBlockWidth, int pitch){
-    
-    // sx and sy make it so that we dont have to redo the entire map just redo part we want
-    // clear out the map incase any changes made to map.. basically doors removed and hidden exit
-    vecEdges.clear();
-
-    for(int x=0; x<w; x++)
-        for(int y=0; y<h; y++)
-            for(int j=0; j<4; j++){
-
-                gameObjects[(y+sy)*pitch + (x+sx)]->edge_exist[j] = false;
-                gameObjects[(y+sy)*pitch + (x+sx)]->edge_exist[j] = 0;
-
-            }
-
-
-
-    // now make the polygons
-    for(int x=1; x<w-1; x++)
-        for(int y=1; y<h-1; y++){
-
-            int i = (y+sy)*pitch+(x+sx);    //current 
-            int n = (y+sy-1)*pitch+(x+sx);  //north
-            int e = (y+sy)*pitch+(x+sx-1);  //east
-            int s = (y+sy+1)*pitch+(x+sx);  //south
-            int w = (y+sy)*pitch+(x+sx+1);  //west
-
-            //is it a solid tile? if yes it needs edge
-            if(gameObjects[i]->getSolidTile()){
-
-                // if no western block it will need west edge
-                if(!gameObjects[w]->getSolidTile()){
-
-                    //created or extended from northen edge
-                    if(gameObjects[n]->edge_exist[eWEST]){
-
-                        //north has edge so just extend it..
-                        vecEdges[gameObjects[n]->edge_id[eWEST]].end.y += fBlockWidth;
-                        gameObjects[i]->edge_id[eWEST] = gameObjects[n]->edge_id[eWEST];
-                        gameObjects[i]->edge_exist[eWEST] = true;
-
-                    }else{
-
-                        sEdge edge;
-                        edge.start.x = (sx+x) *fBlockWidth; edge.start.y = (sy + y)*fBlockWidth;
-                        edge.end.x = edge.start.x; edge.end.y = edge.start.y + fBlockWidth;
-
-                        int edge_id = vecEdges.size();
-                        vecEdges.push_back(edge);
-
-                        gameObjects[i]->edge_id[eWEST] = edge_id;
-                        gameObjects[i]->edge_exist[eWEST] = true;
-
-
+                    // clears horizontal doors
+                    for(int i=-3; i<=3; i++){
+                        if(index+i < vertTiles*horTiles && index+i*horTiles >= 0)
+                            if(gameObjects[index+i]->getType() == 3){
+                                gameObjects[index+i]->setType(1);
+                            }
                     }
 
-                }
+                    // clears vertial doors
+                    for(int i=-3; i<=3; i++){
 
-                
-                // if no eastern block
-                if(!gameObjects[e]->getSolidTile()){
+                        if(index+i*horTiles < vertTiles*horTiles && index+i*horTiles >= 0)
+                            if(gameObjects[index+i*horTiles]->getType() == 3){
+                                gameObjects[index+i*horTiles]->setType(1);
+                            }
+                    }
+
+
+                }else{
+
+                    olc::vf2d dynVel = pDyn->getVelocity();
+                    dynVel += contact_normal * olc::vf2d(std::abs(dynVel.x) , std::abs(dynVel.y)) * (1 - contact_time);
+                    pDyn->setVelocity(dynVel.x, dynVel.y);
+                }
                     
-                    //created or extended from northen edge
-                    if(gameObjects[n]->edge_exist[eEAST]){
+                break;
 
-                        //north has edge so just extend it..
-                        vecEdges[gameObjects[n]->edge_id[eEAST]].end.y += fBlockWidth;
-                        gameObjects[i]->edge_id[eEAST] = gameObjects[n]->edge_id[eEAST];
-                        gameObjects[i]->edge_exist[eEAST] = true;
+            // spawner
+            case 4:
+                // hurt player? remove spawner
+                p1->setHp(p1->getHp() - 20);
 
-                    }else{
+                // delete gameObjects[index];
+                // gameObjects[index] = new Floor();
+                gameObjects[index]->setType(1);
+                break;
 
-                        sEdge edge;
-                        edge.start.x = (sx+x+1) *fBlockWidth; edge.start.y = (sy + y)*fBlockWidth;
-                        edge.end.x = edge.start.x; edge.end.y = edge.start.y + fBlockWidth;
+            // treasure
+            case 5:
+                p1->treasure + 100;
 
-                        int edge_id = vecEdges.size();
-                        vecEdges.push_back(edge);
+                // delete gameObjects[index];
+                // gameObjects[index] = new Floor();
+                gameObjects[index]->setType(1);
+                break;
 
-                        gameObjects[i]->edge_id[eEAST] = edge_id;
-                        gameObjects[i]->edge_exist[eEAST] = true;
-
-
-                    }
-                }
-
-
-                // if no nothern block
-                if(!gameObjects[n]->getSolidTile()){
-
-
-                    if(gameObjects[w]->edge_exist[eNORTH]){
-
-                        vecEdges[gameObjects[w]->edge_id[eNORTH]].end.x += fBlockWidth;
-                        gameObjects[i]->edge_id[eNORTH] = gameObjects[w]->edge_id[eNORTH];
-                        gameObjects[i]->edge_exist[eNORTH] = true;
-
-                    }else{
-
-                        sEdge edge;
-                        edge.start.x = (sx + x)*fBlockWidth; edge.start.y = (sy + y)*fBlockWidth;
-                        edge.end.x = edge.start.x + fBlockWidth; edge.end.y = edge.start.y;
-
-                        int edge_id = vecEdges.size();
-                        vecEdges.push_back(edge);
-
-                        gameObjects[i]->edge_id[eNORTH] = edge_id;
-                        gameObjects[i]->edge_exist[eNORTH] = true;
-
-                    }
-                }
-
-
-                // if no southern block
-                if(!gameObjects[s]->getSolidTile()){
-
-                    if(gameObjects[w]->edge_exist[eSOUTH]){
-
-                        vecEdges[gameObjects[w]->edge_id[eSOUTH]].end.x += fBlockWidth;
-                        gameObjects[i]->edge_id[eSOUTH] = gameObjects[w]->edge_id[eSOUTH];
-                        gameObjects[i]->edge_exist[eSOUTH] = true;
-
-                    }else{
-
-                        sEdge edge;
-                        edge.start.x = (sx + x) *fBlockWidth; edge.start.y = (sy + y + 1)*fBlockWidth;
-                        edge.end.x = edge.start.x + fBlockWidth; edge.end.y = edge.start.y;
-
-                        int edge_id = vecEdges.size();
-                        vecEdges.push_back(edge);
-
-                        gameObjects[i]->edge_id[eSOUTH] = edge_id;
-                        gameObjects[i]->edge_exist[eSOUTH] = true;
-
-                    }
-                }
-
-
-            }
+            default:
+                olc::vf2d dynVel = pDyn->getVelocity();
+                dynVel += contact_normal * olc::vf2d(std::abs(dynVel.x) , std::abs(dynVel.y)) * (1 - contact_time);
+                pDyn->setVelocity(dynVel.x, dynVel.y);
 
         }
+
+        return true;
+    }
+
+    return false;
 }
-
-
-// bool Gauntlet::PointVsTile(const olc::vf2d& p, const Tile* pTile){
-
-//     return (p.x >= pTile->pos.x && p.y >= pTile->pos.y && p.x < pTile->pos.x + pTile->size.x && p.y < pTile->pos.y + pTile->size.y);
-// }
-
-
-// bool Gauntlet::TileVsTile(const Tile* pt1, const Tile* pt2){
-
-//     return (pt1->pos.x < pt2->pos.x + pt2->size.x && pt1->pos.x + pt1->size.x > pt2->pos.x && pt1->pos.y < pt2->pos.y + pt2->size.y && pt1->pos.y + pt1->size.y > pt2->pos.y);
-
-// }
-
-// bool RayVsTile(const olc::vf2d& ray_origin, const olc::vf2d& ray_dir, const Tile* target, olc::vf2d& contact_point, olc::vf2d& contact_normal, float& t_hit_near){
-
-//     contact_normal = {0,0};
-//     contact_point = {0,0};
-
-//     olc::vf2d invdir = 1.0f / ray_dir;
-
-//     olc::vf2d t_near = (target->pos - ray_origin) * invdir;
-//     olc::vf2d t_far = (target->pos + target->size - ray_origin) * invdir;
-
-//     if(std::isnan(t_far.y) || std::isnan(t_far.x)) return false;
-//     if(std::isnan(t_near.y) || std::isnan(t_near.x)) return false;
-
-
-//     if(t_near.x > t_far.x) std::swap(t_near.x, t_far.x);
-//     if(t_near.y > t_far.y) std::swap(t_near.y, t_far.y);
-
-
-//     if(t_near.x > t_far.y || t_near.y > t_far.x) return false;
-
-    
-//     t_hit_near = std::max(t_near.x, t_near.y);
-
-//     float t_hit_far = std::min(t_far.x, t_far.y);
-
-
-//     if(t_hit_far < 0) return false;
-
-//     contact_point = ray_origin + t_hit_far * ray_dir;
-
-//     if(t_near.x > t_near.y)
-//         if(invdir.x < 0)
-//             contact_normal = {1, 0};
-//         else
-//             contact_normal = {-1, 0};
-//     else if( t_near.x < t_near.y)
-//         if(invdir.y < 0)
-//             contact_normal = {0 , 1};
-//         else
-//             contact_normal = {0, -1};
-
-
-//     return true;     
-
-// }
-
-
-// bool Gauntlet::DynamicVsTile(const Dynamic* pDyn, const float fTimeStep, const Tile& pTile, olc::vf2d& contact_point, olc::vf2d& contact_normal, float& contact_time){
-
-//     olc::vf2d dynVel = pDyn->getVelocity();
-    
-//     if(dynVel.x == 0 && dynVel.y == 0)
-//         return false;
-
-//     Tile expanded_target;
-
-//     expanded_target.setPosition(pTile.getPosition() - pDyn->getSize() / 2);
-//     expanded_target.setSize(pTile.getSize() + pDyn->getSize());
-
-//     if(RayVsTile(pDyn->getPosition() + pDyn->getSize()/2 , dynVel * fTimeStep, &expanded_target, contact_point, contact_normal, contact_time))
-//         return (contact_time >= 0.0f && contact_time <  1.0f);
-//     else
-//         return false;
-// }
-
-
-// bool Gauntlet::ResolveCollision(Dynamic* pDyn, const float fTimeStep, Tile* pTile){
-
-
-//     olc::vf2d contact_point, contact_normal;
-//     float contact_time = 0.0f;
-
-//     if (DynamicVsTile(pDyn, fTimeStep, *pTile, contact_point, contact_normal, contact_time)) {
-
-//         if(contact_normal.y > 0) pDyn->contact[0] = pTile; else nullptr;
-//         if(contact_normal.x < 0) pDyn->contact[1] = pTile; else nullptr;
-//         if(contact_normal.y < 0) pDyn->contact[2] = pTile; else nullptr;
-//         if(contact_normal.x > 0) pDyn->contact[3] = pTile; else nullptr;
-
-//         olc::vf2d dynVel = pDyn->getVelocity();
-//         dynVel += contact_normal * olc::vf2d(std::abs(dynVel.x) , std::abs(dynVel.y)) * (1 - contact_time);
-//         pDyn->setVelocity(dynVel.x, dynVel.y);
-
-//         return true;
-//     }
-
-//     return false;
-// }
-
-
-
 

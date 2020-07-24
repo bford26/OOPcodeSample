@@ -2,6 +2,8 @@
     
 Player::Player(){
 
+    keyValue = 0;
+    treasure = 0;
 }
 
 Player::~Player(){

@@ -32,8 +32,11 @@ private:
     std::string name;
     int def;
     int shotPwr, magicPwr;
-    int treasure;
     direction dir;
+
+public:
+    int treasure;
+    int keyValue;
 
 };
 

@@ -27,32 +27,24 @@ public:
 public:
 
   //getters
-  olc::vf2d getPosition();
-  int getSize() const;
+  olc::vf2d getPosition() const;
+  olc::vf2d getSize() const;
   int getType() const;
   bool getSolidTile() const;
 
   // setters
   void setPosition(float x_, float y_);
   void setPosition(olc::vf2d pos_);
-  void setSize(int size_);
+  void setSize(olc::vf2d size_);
   void setType(int type_);
   void setSolidTile(bool EntvsTile_);
-
-private:
-
-  int size = 16;
 
 protected:
 
   olc::vf2d pos;
+  olc::vf2d size = { 16.0f , 16.0f };
   bool SolidTile = false;
   int tileType;
-
-public:
-  // these will be used for edges and collision detection
-  int edge_id[4];
-  bool edge_exist[4];
 
 };
 

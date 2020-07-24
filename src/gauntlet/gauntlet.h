@@ -35,26 +35,18 @@ private:
     // this is basically a way to take advantage of ploymorphism
     // std::vector<Dynamic> dynList;
 
-    Player *p1;
-    // here we use vectors to store the amount of projectiles and mobs because the amount can grow or decrease very rapidly due to spawners
     std::vector<Mob> mobList;
     std::vector<Proj> projList;
-
-
-private:
-
-    std::vector<sEdge> vecEdges;
+    Player *p1;
 
 public:
 
-    void ConvertTilesToPolyMap(int sx, int sy, int w, int h, float fBlockWidth, int pitch);
-
+    // collision detection 
     bool PointVsTile(const olc::vf2d& p, const Tile* pTile);
     bool TileVsTile(const Tile* pt1, const Tile* pt2);
     bool RayVsTile(const olc::vf2d& ray_origin, const olc::vf2d& ray_dir, const Tile* target, olc::vf2d& contact_point, olc::vf2d& contact_normal, float& t_hit_near);
     bool DynamicVsTile(const Dynamic* pDyn, const float fTimeStep, const Tile& pTile, olc::vf2d& contact_point, olc::vf2d& contact_normal, float& contact_time);
-    bool ResolveCollision(Dynamic* pDyn, const float fTimeStep, Tile* pTile);
-
+    bool ResolveCollision(Dynamic* pDyn, const float fTimeStep, Tile* pTile, int index);
 
 public:
 
@@ -72,7 +64,6 @@ public:
     bool loadLevel(int index);
 
     void utilFunc(float fElapsedTime);
-    void panFunc();
 
 };
 
