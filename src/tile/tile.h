@@ -3,20 +3,6 @@
 
 #include "olcPixelGameEngine.h"
 
-// THESE WILL BE USEd to index the edge ids and exist arrays
-#define eNORTH 0
-#define eEAST 1
-#define eSOUTH 2
-#define eWEST 3
-
-struct sEdge {
-
-  // an edge object will hold 4 floats : start and end xy values.
-  olc::vf2d start, end;
-
-};
-
-
 class Tile {
 
 public:
@@ -39,12 +25,20 @@ public:
   void setType(int type_);
   void setSolidTile(bool EntvsTile_);
 
+
+public:
+
+  // virtual void Interaction();
+
 protected:
 
   olc::vf2d pos;
   olc::vf2d size = { 16.0f , 16.0f };
-  bool SolidTile = false;
+  bool solidTile = false;
   int tileType;
+
+
+
 
 };
 

@@ -10,17 +10,13 @@ public:
     InteractionBlock();
     ~InteractionBlock();
 
-public:
-
-    virtual void interact();
-
 };
 
 class Key : public InteractionBlock {
 
 public:
 
-    Key();
+    Key(int type_);
     ~Key();
 
 };

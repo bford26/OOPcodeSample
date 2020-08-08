@@ -3,30 +3,29 @@
 
 InteractionBlock::InteractionBlock(){}
 InteractionBlock::~InteractionBlock(){}
-void InteractionBlock::interact(){}
 
-Key::Key(){
-    tileType = 2;
-    SolidTile = true;
+Key::Key(int type_){
+    tileType = type_;
+    solidTile = true;
 }
 
 Key::~Key(){}
 
 Door::Door(int type_){
     tileType = type_;
-    SolidTile = true;
+    solidTile = true;
 }
 Door::~Door(){}
 
 Consumable::Consumable(int type_){
     tileType = type_;
-    SolidTile = true;
+    solidTile = true;
 }
 Consumable::~Consumable(){}
 
 Spawner::Spawner(int type_){
     tileType = type_;
-    SolidTile = true;
+    solidTile = true;
 }
 Spawner::~Spawner(){}
 
@@ -36,12 +35,12 @@ Exit::Exit(int type_){
 
     // type 10 is a hidden exit 
     // this will change if the block is attacked!
-    if(type_ == 10)
-        SolidTile = false;
+    if(type_ == 32)
+        solidTile = false;
 
     //type 11 is the main exit
-    else if(type_ == 11)
-        SolidTile = true;
+    // else if(type_ == 30)
+    //     SolidTile = true;
 
 }
 Exit::~Exit(){}

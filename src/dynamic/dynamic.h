@@ -2,12 +2,14 @@
 #define DYNAMIC_H
 
 #include "olcPixelGameEngine.h"
+#include "tile.h"
 
 enum direction {
-    NORTH, EAST, SOUTH, WEST,
+    N, E, S, W,
+    NE, NW, SE, SW,
 };
 
-class Dynamic {
+class Dynamic : public Tile {
 
 public:
 
@@ -17,31 +19,30 @@ public:
 public:
 
     // getters
-    olc::vf2d getPosition() const;
     olc::vf2d getVelocity() const;
     int getSpeed() const;
     direction getDir() const;
-    olc::vf2d getSize() const;
+    int getId() const;
 
     // setters
-    void setPosition(float x_, float y_);
     void setVelocity(float vx_, float vy_);
     void setSpeed(int speed_);
     void setDir(direction dir_);
-    void setSize(olc::vf2d size_);
+    void setId(int id_);
+
 
 private:
 
-    olc::vf2d pos;
     olc::vf2d vel;
     int speed;
     direction dir;
-    olc::vf2d size = { 15.0f , 15.0f};
+    int id;
 
 public:
 
     // for collisions?
-
+    bool dead =  false;
+    
 };
 
 #endif

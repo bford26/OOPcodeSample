@@ -32,6 +32,10 @@ SRCS += $(foreach dir, $(DIRS), $(patsubst $(dir)/%.cpp, %.cpp, $(wildcard $(dir
 INC  = $(wildcard *.h) 
 INC += $(foreach dir, $(DIRS), $(wildcard ./$(dir)/*.h))
 
+# only have the tile dependencies
+LOCAL_DIRS = $(patsubst %/, %, $(filter tile/,$(filter %/, $(shell ls -F ..))))
+LOCAL_INC = $(patsubst %, -I../%, $(LOCAL_DIRS))
+
 # makes list of object names & path to obj dir
 OBJS = $(patsubst %.cpp, ./obj/%.o, $(SRCS))
 
@@ -41,18 +45,21 @@ EXT_DIRS = $(patsubst %/, %, $(filter-out obj/, $(filter %/, $(shell ls -F ../..
 # includes the path to the external dependencies
 EXT_INC = $(patsubst %, -I../../ext/%, $(EXT_DIRS))
 
-
 # EXT_DIRS = $(filter-out obj/, $(filter %/, $(shell cd ../../ext/ && ls -F )))
 # EXT_DEPS = $(foreach dir, ../../ext/$(EXT_DIRS), $(wildcard $(dir)/*.h))
 # EXT_DEPS = $(foreach dir, $(EXT_DIRS), $(shell cd ../../ext/$(dir) && ls *.h))
 
+
+
+
+
 compile: $(OBJS) $(INC)
 
 ./obj/%.o: %.cpp $(INC)
-	$(CC) $(CXXFLAGS) $(EXT_INC) -c $< -o $@ $(LIBS)
+	$(CC) $(CXXFLAGS) $(LOCAL_INC) $(EXT_INC) -c $< -o $@ $(LIBS)
 
 clean:
 	rm -f ./obj/*.o 
 
 test:
-	@echo $(EXT_INC)
+	@echo $(TILE)

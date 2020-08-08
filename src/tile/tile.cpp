@@ -17,7 +17,7 @@ int Tile::getType() const {
 }
 
 bool Tile::getSolidTile() const {
-    return SolidTile;
+    return solidTile;
 }
 
 void Tile::setPosition(float x_, float y_){
@@ -37,7 +37,7 @@ void Tile::setType(int type_){
 }
 
 void Tile::setSolidTile(bool EntvsTile_){
-    SolidTile = EntvsTile_;
+    solidTile = EntvsTile_;
 }
 
 

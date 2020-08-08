@@ -7,9 +7,9 @@ class Proj : public Dynamic {
 
 public:
 
-    Proj();
+    Proj(int type_);
     ~Proj();
-
+    
 };
 
 

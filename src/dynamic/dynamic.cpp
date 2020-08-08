@@ -1,14 +1,11 @@
 #include "dynamic.h"
 
 Dynamic::Dynamic(){
-    dir = NORTH;
+    dir = direction::E;
+    size = {15.0f, 15.0f};
 }
 
 Dynamic::~Dynamic(){}
-
-olc::vf2d Dynamic::getPosition() const {
-    return pos;
-}
 
 olc::vf2d Dynamic::getVelocity() const {
     return vel;
@@ -22,12 +19,8 @@ direction Dynamic::getDir() const {
     return dir;
 }
 
-olc::vf2d Dynamic::getSize() const {
-    return size;
-}
-
-void Dynamic::setPosition(float x_, float y_){
-    pos = {x_ , y_};
+int Dynamic::getId() const {
+    return id;
 }
 
 void Dynamic::setVelocity(float vx_, float vy_){
@@ -42,6 +35,6 @@ void Dynamic::setDir(direction dir_){
     dir = dir_;
 }
 
-void Dynamic::setSize(olc::vf2d size_){
-    size = size_;
+void Dynamic::setId(int id_){
+    id = id_;
 }

@@ -27,15 +27,18 @@ void Resources::loadSprites(){
     A much smoother method  would load the reasources at the start of each new level/world/arena. Here we load everything at the begining because this is just a demonstration and all these resources are used in the demo level.
     */
 
-    load("wall", "data/sprites/static/wall.png");
-    load("floor", "data/sprites/static/floor.png");
-    load("key", "data/sprites/static/key.png");
-    load("door", "data/sprites/static/door.png");
-    load("spawner", "data/sprites/static/spawner.png");
-    load("treasure", "data/sprites/static/treasure.png");
-    load("player", "data/sprites/static/player.png");
-    load("ghost", "data/sprites/static/enemy01.png");
-    load("demon", "data/sprites/static/enemy02.png");
+    // this will hold all the level sprites; walls, floor, exit, etc..
+    load("lvlSheet", "data/sprites/static/spriteSheet.png");
+    load("player", "data/sprites/dynamic/questor.png");
+    load("p1Proj", "data/sprites/dynamic/questor_proj.png");
+    load("ghost", "data/sprites/dynamic/enemy01.png");
+    load("demon", "data/sprites/dynamic/enemy02.png");
+    load("info1", "data/sprites/static/info1.png");
+    load("info2", "data/sprites/static/info2.png");
+
+
+
+
 
 }
 

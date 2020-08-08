@@ -23,14 +23,14 @@ void Static::setPosition(olc::vi2d pos_){
 Wall::Wall(int type_){
     
     tileType = type_;
-    SolidTile = true;
+    solidTile = true;
 }
 
 Wall::~Wall(){}
 
 Floor::Floor(){
 
-    tileType = 1;
-    SolidTile = false;
+    tileType = 19;
+    solidTile = false;
 }
 Floor::~Floor(){}

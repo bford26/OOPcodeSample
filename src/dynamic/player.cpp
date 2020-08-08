@@ -4,6 +4,8 @@ Player::Player(){
 
     keyValue = 0;
     treasure = 0;
+    potions = 0;
+    Dynamic::setType(34);
 }
 
 Player::~Player(){
@@ -26,10 +28,6 @@ int Player::getMagicPwr() const {
     return magicPwr;
 }
 
-direction Player::getDir() const {
-    return dir;
-}
-
 void Player::setName(std::string name_){
     name = name_;
 }
@@ -44,9 +42,5 @@ void Player::setShotPwr(int pwr_){
 
 void Player::setMagicPwr(int pwr_){
     magicPwr = pwr_;
-}
-
-void Player::setDir(direction dir_){
-    dir = dir_;
 }
 

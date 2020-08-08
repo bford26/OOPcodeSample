@@ -1,16 +1,21 @@
 #include "mob.h"
 
 Mob::Mob(int type_, float x_, float y_){
-    this->setType(type_);
-    this->setPosition(x_ , y_);
+    Dynamic::setType(type_);
+    Dynamic::setPosition(x_ , y_);
+
+    if(type_ == 35)
+    {   
+
+        Entity::setHp(100);
+
+    }else if(type_ == 36){
+
+        Entity::setHp(150);
+
+    }
+
 }
 
 Mob::~Mob(){}
 
-bool Mob::getStatus() const {
-    return dead;
-}
-
-void Mob::setStatus(bool status_){
-    dead = status_;
-}
