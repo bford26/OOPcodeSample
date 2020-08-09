@@ -37,25 +37,33 @@ bool Gauntlet::OnUserCreate(){
 
     ExitGame = -1;
 
+    lastTime = 0.0f;
+    curTime = 0.0f;
+
     return true;
 }
 
 bool Gauntlet::OnUserUpdate(float fElapsedTime){
 
+    curTime = fElapsedTime + curTime;
+
+
+    if(curTime - lastTime >= 2.0f && p1->getVelocity().mag() > 0.0f){
+        frameBool = !frameBool;
+    }
+
     // this will update the player based on the input keys W,A,S,D 
     updatePlayer(fElapsedTime);
     updateMobs(fElapsedTime);
     updateProjectiles(fElapsedTime);
+    // updateTiles(fElapsedTime);
     // utilFunc(fElapsedTime);
     // DrawDecals();
 
     DrawLevel();
     DrawEntities();
 
-
-
     std::cout << mobList.size() << std::endl;
- 
 
     if(GetKey(olc::ESCAPE).bPressed){
         bGameLoop = false;
@@ -293,36 +301,8 @@ void Gauntlet::updatePlayer(float fElapsedTime){
         ResolveCollision(p1, fElapsedTime, gameObjects[j.first], j.first);
 
     
-    // set player direction
-    // float theta = atan2(-1.0f * vel.y, vel.x);
-    direction d;
-    vel = vel.norm();
-
-    if( vel.x == 1)
-        d = direction::E;
-    else if( vel.y == 1)
-        d = direction::S;
-    else if( vel.x == -1)
-        d = direction::W;
-    else if( vel.y == -1)
-        d = direction::N;
-    else if( vel.y > 0){
-
-        if( vel.x > 0 )
-            d = direction::SE;
-        else if( vel.x < 0  )
-            d = direction::SW;
-
-    }else{
-
-        if( vel.x > 0 )
-            d = direction::NE;
-        else if( vel.x < 0  )
-            d = direction::NW;
-        else
-            d = pDir;
-    }
-
+    // set the new direction using the new velocity
+    direction d = p1->getVelocityDirection();
     p1->setDir(d);
 
 
@@ -337,7 +317,6 @@ void Gauntlet::updatePlayer(float fElapsedTime){
         {
             ResolveCollision(p1, fElapsedTime, &m);
         }
-
     }
 
 
@@ -345,45 +324,6 @@ void Gauntlet::updatePlayer(float fElapsedTime){
     pPos = pPos + p1->getVelocity() * fElapsedTime;
     p1->setPosition(pPos.x, pPos.y);
 
-    auto getDirectionVector = [&](direction dir){
-
-        olc::vf2d vec = {0.0f,0.0f};
-
-        if(dir == direction::N){
-            vec.x = 0;
-            vec.y = -1;
-
-        } else if(dir == direction::E){
-            vec.x = 1;
-            vec.y = 0;
-        
-        } else if(dir == direction::S){
-            vec.x = 0;
-            vec.y = 1;
-        
-        } else if(dir == direction::W){
-            vec.x = -1;
-            vec.y = 0;
-
-        } else if(dir == direction::NW){
-            vec.x = -1;
-            vec.y = -1;
-
-        } else if(dir == direction::NE){
-            vec.x = 1;
-            vec.y = -1;
-
-        } else if(dir == direction::SW){
-            vec.x = -1;
-            vec.y = 1;
-
-        } else if(dir == direction::SE){
-            vec.x = 1;
-            vec.y = 1;
-        }
-
-        return vec;
-    };
 
     if( GetKey(olc::SPACE).bPressed ){
 
@@ -392,7 +332,7 @@ void Gauntlet::updatePlayer(float fElapsedTime){
         p.dead = false;
         p.setDir(p1->getDir());
 
-        vel = getDirectionVector(p.getDir()).norm();
+        vel = p1->getDirectionVector();
 
         p.setPosition( p1->getPosition().x + 8*vel.x , p1->getPosition().y + 8*vel.y );
 
@@ -401,9 +341,6 @@ void Gauntlet::updatePlayer(float fElapsedTime){
         projList.push_back(p);
 
     }
-
-
-
 
 }
 
@@ -435,14 +372,84 @@ void Gauntlet::updateMobs(float fElapsedTime){
     // mobList.clear();
     // mobList = tempVec;
     // tempVec.clear();
+    int mcount =0;
+    for( auto& m : mobList){
 
-    // for( auto m : mobList){
+        if(m.dead == false)
+        {
+
+            olc::vf2d pos = m.getPosition(), vel;
+
+            // if player is in a range of mob , it will want to move to them
+            if( (pos - p1->getPosition()).mag() <= 16*8)
+            {
+                // get the move direction from player 
+                vel = (p1->getPosition() - pos).norm();
+                vel *= m.getSpeed(); 
+
+            }else{
+
+                vel = {0.0f, 0.0f};
+
+            } 
+
+            m.setVelocity(vel.x , vel.y);
+
+            // collision detection here 
+            olc::vf2d cp, cn;
+            float t=0, min_t = INFINITY;
+            std::vector<std::pair<int,float>> z;
+            
+            int left_bound, right_bound;
+            int top_bound, bot_bound;
+
+            left_bound  = int(pos.x /16) - 2;
+            right_bound = int(pos.x /16) + 2;
+            top_bound   = int(pos.y /16) - 2;
+            bot_bound   = int(pos.y /16) + 2;
+
+            if(left_bound < 0) left_bound = 0;
+            if(right_bound > horTiles) right_bound = horTiles; 
+            if(top_bound < 0) top_bound = 0;
+            if(bot_bound > vertTiles) bot_bound = vertTiles;
+            
+            for(int i=left_bound; i<right_bound; i++)
+                for(int j=top_bound; j<bot_bound; j++){
+
+                    if(DynamicVsTile(&m, fElapsedTime, *gameObjects[j*horTiles+i], cp, cn, t))
+                    {
+                        z.push_back({j*horTiles+i,t});
+                    }
+                }
+
+            std::sort(z.begin(), z.end(), [](const std::pair<int, float>& a, const std::pair<int, float>& b)
+            {
+                return a.second < b.second;
+            });
+
+            // resolve collisions in proper order 
+            for(auto& j : z)
+                ResolveCollision(&m, fElapsedTime, gameObjects[j.first], j.first);
 
 
 
+            // mobs vs other mobs
 
+            for(int j=0; j< mobList.size(); j++)
+            {
+                
+                if(mcount != j)
+                {
+                    ResolveCollision(&m, fElapsedTime, &mobList[j]);
+                }
+            }
+            
+            m.setDir(m.getVelocityDirection());
+            m.setPosition( pos + m.getVelocity() * fElapsedTime );
+        }
 
-    // }
+        mcount++;
+    }
 }
 
 void Gauntlet::updateProjectiles(float fElapsedTime){
@@ -904,10 +911,10 @@ void Gauntlet::DrawLevel(){
 
 
     // display health, keys, and potions
-    DrawDecal({16,16},infoDecal1);
-    DrawStringDecal({16+8,16},std::to_string(p1->getHp()), olc::WHITE, {1.0f, 1.0f});
-    DrawStringDecal({16+8,16+8},std::to_string(p1->keyValue), olc::WHITE, {1.0f, 1.0f});
-    DrawStringDecal({16+24,16+8},std::to_string(p1->potions), olc::WHITE, {1.0f, 1.0f});
+    DrawDecal({16*2,16*2},infoDecal1);
+    DrawStringDecal({16*2+8,16*2},std::to_string(p1->getHp()), olc::WHITE, {1.0f, 1.0f});
+    DrawStringDecal({16*2+8,16*2+8},std::to_string(p1->keyValue), olc::WHITE, {1.0f, 1.0f});
+    DrawStringDecal({16*2+24,16*2+8},std::to_string(p1->potions), olc::WHITE, {1.0f, 1.0f});
     
     // display world level
     char buffer [2];
@@ -941,7 +948,7 @@ void Gauntlet::DrawEntities(){
         offy = (vertTiles - yScreenOffset)*16 - playerPosition.y;
 
     // Draw Player
-    DrawPartialDecal( { (float)(ScreenWidth()/2.0f - offx) , (float)(ScreenHeight()/2.0f - offy) }, decalList[1], { (float) p1->getDir()*16,0}, {16, 16} );
+    DrawPartialDecal( { (float)(ScreenWidth()/2.0f - offx) , (float)(ScreenHeight()/2.0f - offy) }, decalList[1], { (float) p1->getDir()*16, 16*frameBool}, {16, 16} );
 
 
     // Draw mobs
@@ -982,9 +989,9 @@ void Gauntlet::DrawEntities(){
 
                     // DrawDecal( {  (float) mdx , (float) mdy } , decalList[2]);
                     if(m.getType() == 35)
-                        DrawDecal( { (float) mdx , (float) mdy } , decalList[ 2 ] );     
+                        DrawPartialDecal( { (float) mdx , (float) mdy } , decalList[ 2 ] , { (float) m.getDir()*16, 16*frameBool}, {16, 16} );     
                     else if(m.getType() == 36)
-                        DrawDecal( { (float) mdx , (float) mdy } , decalList[ 3 ] );
+                        DrawPartialDecal( { (float) mdx , (float) mdy } , decalList[ 3 ] , { (float) m.getDir()*16, 16*frameBool}, {16, 16} );
 
                 }
         }
@@ -1016,4 +1023,85 @@ void Gauntlet::DrawEntities(){
     }
 }
 
+void Gauntlet::updateTiles(float fElapsedTime){
 
+    for(int i=0; i < vertTiles*horTiles; i++)
+    {
+
+        int tileType = gameObjects[i]->getType();
+        if(tileType >= 26 && tileType <= 31)
+        {
+
+            int mType = 0;
+            if(tileType >= 26 && tileType <= 28)
+                mType = 35;
+            else if(tileType >= 29 && tileType <= 31)
+                mType = 36;
+
+            // make new mob in a postion 1 tile away from current tile position
+
+            if(curTime - lastTime >= 4.0)
+            {  
+
+                lastTime = curTime;
+                curTime = 0.0f;
+                
+                // get spawner pos
+                olc::vf2d mpos = gameObjects[i]->getPosition();
+                int x = mpos.x, y = mpos.y;
+
+                // check if a mob is to any of the sides of the spawner if not make that place the posiition to spawn mob
+
+                int nidx, eidx, widx, sidx;
+
+                nidx = i + -1*horTiles + 0;
+                eidx = i + 0*horTiles + 1;
+                sidx = i + 1*horTiles + 0;
+                widx = i + 0*horTiles + -1;
+                
+                auto tileIsFloor = [&](int index){
+                    
+                    bool noMobs = true;
+
+                    if(19 == gameObjects[index]->getType())
+                    {                     
+                        for(auto &m : mobList){
+                            if( TileVsTile( &m, gameObjects[index] ) ){
+                                noMobs = false;
+                                break;
+                            }
+                        }
+                    }
+
+                    return noMobs;
+                };
+
+                if(tileIsFloor(nidx))
+                {
+                    x = gameObjects[nidx]->getPosition().x;
+                    y = gameObjects[nidx]->getPosition().y;
+
+                }else if( tileIsFloor(eidx)){
+
+                    x = gameObjects[eidx]->getPosition().x;
+                    y = gameObjects[eidx]->getPosition().y;
+
+                }else if( tileIsFloor(sidx)){
+
+                    x = gameObjects[sidx]->getPosition().x;
+                    y = gameObjects[sidx]->getPosition().y;
+
+                }else if( tileIsFloor(widx)){
+
+                    x = gameObjects[widx]->getPosition().x;
+                    y = gameObjects[widx]->getPosition().y;
+
+                }
+
+                Mob m(mType, x, y);
+                mobList.push_back(m);                
+                
+            }
+        }   
+    }
+}

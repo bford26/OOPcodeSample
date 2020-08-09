@@ -31,6 +31,11 @@ public:
     void setId(int id_);
 
 
+public:
+
+    olc::vf2d getDirectionVector();
+    direction getVelocityDirection();
+
 private:
 
     olc::vf2d vel;

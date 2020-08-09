@@ -37,6 +37,11 @@ private:
     int ExitGame = 10;
     bool bGameLoop = true;
 
+    float lastTime, curTime;
+
+    // which frame to use
+    bool frameBool = false;
+
 private:
 
     // this is basically a way to take advantage of ploymorphism
@@ -72,6 +77,7 @@ public:
     void updatePlayer(float fElapsedTime);
     void updateMobs(float fElapsedTime);
     void updateProjectiles(float fElapsedTime);
+    void updateTiles(float fElapsedTime);
 
     void DrawDecals();
 

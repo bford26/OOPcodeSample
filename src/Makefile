@@ -15,3 +15,7 @@ clean:
 	@for dir in $(DIRS); do \
 		(cd $$dir; if [ -f ./Makefile ]; then $(MAKE) clean; fi;); \
 	done
+
+
+test:
+	@echo $(DIRS)
