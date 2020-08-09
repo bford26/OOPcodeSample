@@ -334,7 +334,23 @@ void Gauntlet::updatePlayer(float fElapsedTime){
 
         vel = p1->getDirectionVector();
 
-        p.setPosition( p1->getPosition().x + 8*vel.x , p1->getPosition().y + 8*vel.y );
+        
+        auto DetermineProjPos = [&](float x, float y){
+
+            direction dir = p1->getVelocityDirection();
+            olc::vf2d ppos = p1->getPosition(), size = p.getSize(), projPos;
+            
+            if(dir == direction::E || dir == direction::W)
+                // north west no change to size
+                // east or west then swap the size x and y
+                p.setSize({size.y, size.x });
+            
+            ppos = ppos + p1->getSize() / 2.0f;
+            projPos = ppos + p.getSize() * p1->getVelocity().norm();
+
+        };
+
+        p.setPosition( p1->getPosition().x + p.getSize().x*vel.x , p1->getPosition().y + p.getSize().y*vel.y );
 
         p.setVelocity( vel.x * p.getSpeed() , vel.y * p.getSpeed());
 

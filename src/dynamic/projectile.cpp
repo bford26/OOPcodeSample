@@ -8,6 +8,7 @@ Proj::Proj(int type_){
     
     Dynamic::setType(type_);
 
+    Dynamic::setSize(  { 3 , 8}  );
 }
 
 Proj::~Proj(){}
