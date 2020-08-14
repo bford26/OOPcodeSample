@@ -21,18 +21,18 @@ DIRS  = $(patsubst %/, %, $(filter-out obj/, $(filter %/, $(shell ls -F))))
 
 # finds all source files (*.cpp) 
 SRCS  = $(wildcard *.cpp)
-SRCS += $(foreach dir, $(DIRS), $(patsubst $(dir)/%.cpp, %.cpp, $(wildcard $(dir)/*.cpp)))
+# SRCS += $(foreach dir, $(DIRS), $(patsubst $(dir)/%.cpp, %.cpp, $(wildcard $(dir)/*.cpp)))
 
 # gets a list of all dependencies in current and subsequent dirs
 INC  = $(wildcard *.h) 
-INC += $(foreach dir, $(DIRS), $(wildcard ./$(dir)/*.h))
+# INC += $(foreach dir, $(DIRS), $(wildcard ./$(dir)/*.h))
 
 # makes list of object names & path to obj dir
-OBJS = $(patsubst %.cpp, ./obj/%.o, $(SRCS))
+OBJS = $(patsubst %.cpp, ./../../bin/%.o, $(SRCS))
 
 compile: $(OBJS) $(INC)
 
-./obj/%.o: %.cpp $(INC)
+./../../bin/%.o: %.cpp $(INC)
 	$(CC) $(CXXFLAGS) -c $< -o $@ $(LIBS)
 
 clean:

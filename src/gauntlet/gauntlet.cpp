@@ -25,6 +25,8 @@ bool Gauntlet::OnUserCreate(){
     infoDecal1 = new olc::Decal(Resources::get().getSprite("info1"));
     infoDecal2 = new olc::Decal(Resources::get().getSprite("info2"));
 
+    utilDecal = new olc::Decal(Resources::get().getSprite("startScreen"));
+
     p1 = new Player();
     p1->setSpeed(100);
     p1->setHp(500);
@@ -35,39 +37,129 @@ bool Gauntlet::OnUserCreate(){
     nLevel = 1;
     loadLevel(nLevel);
 
-    ExitGame = -1;
+    // ExitG = -1;
 
     lastTime = 0.0f;
     curTime = 0.0f;
+
+    gamestate = GameState::START;
 
     return true;
 }
 
 bool Gauntlet::OnUserUpdate(float fElapsedTime){
 
-    curTime = fElapsedTime + curTime;
+
+    // std::cout << GetMouseX() << " , " << GetMouseY() << std::endl;
 
 
-    if(curTime - lastTime >= 2.0f && p1->getVelocity().mag() > 0.0f){
-        frameBool = !frameBool;
+    switch (gamestate)
+    {
+
+    case 0:
+        // START
+        // draw start screen
+        // check if any button pressed to start game
+
+        DrawDecal( {0.0f,0.0f} , utilDecal);
+        
+        for(int i=1; i<85; i++)
+        {
+            if( GetKey( (olc::Key) i ).bPressed )
+            {
+                gamestate = GameState::GAME;
+
+                // no longer need utilDecal
+                delete utilDecal;
+                utilDecal = nullptr;
+
+                break;
+            }
+        }
+
+
+
+        break;
+
+    case 1:
+        // Game
+        // do basic game loop
+        // check if player has hit escape to pause game
+
+        curTime += fElapsedTime;
+
+        if(curTime - lastTime >= 1.0f)
+        {
+            frameBool = !frameBool;
+            lastTime = curTime; 
+        }
+
+        // this will update the player based on the input keys W,A,S,D 
+        updatePlayer(fElapsedTime);
+        updateMobs(fElapsedTime);
+        updateProjectiles(fElapsedTime);
+        // updateTiles(fElapsedTime);
+        // utilFunc(fElapsedTime);
+        // DrawDecals();
+
+        DrawLevel();
+        DrawEntities();
+
+        if(GetKey(olc::ESCAPE).bPressed){
+            gamestate = GameState::PAUSED;
+        }
+
+        break;
+
+    case 2:
+        // PAUSED
+        // overlay pause screen give exit option and a resume option
+        
+        if(PauseChoice == -1)
+            PauseChoice = 0;
+
+        if(utilDecal == nullptr)
+            utilDecal = new olc::Decal(Resources::get().getSprite("pauseScreen"));
+
+        // 0 means resume 1 means exit
+        if(PauseChoice == 0)
+        {
+            if(GetKey(olc::S).bPressed)
+                PauseChoice = 1;
+            else if(GetKey(olc::SPACE).bPressed){
+                
+                gamestate = GameState::GAME;
+                delete utilDecal;
+                utilDecal = nullptr;
+            }
+        }else if(PauseChoice == 1){
+
+            if(GetKey(olc::W).bPressed)
+                PauseChoice = 0;
+            else if(GetKey(olc::SPACE).bPressed)
+                bGameLoop = false;
+        }
+
+        DrawPartialDecal( { ScreenWidth()/2.0f - 40.0f, ScreenHeight()/2.0f - 26.0f }, utilDecal, { PauseChoice * 80.0f, 0.0f }, { 79.0f, 52.0f });
+        break;
+
+    case 3:
+        // OVER
+        // move the player to the exit and spin them few times then set GameLoop to false;
+                
+        DrawLevel();
+        DrawEntities();
+
+        if(ExitGameCounter == 0)
+            bGameLoop = false;
+
+        break;
+
+    default:
+        break;
     }
 
-    // this will update the player based on the input keys W,A,S,D 
-    updatePlayer(fElapsedTime);
-    updateMobs(fElapsedTime);
-    updateProjectiles(fElapsedTime);
-    // updateTiles(fElapsedTime);
-    // utilFunc(fElapsedTime);
-    // DrawDecals();
-
-    DrawLevel();
-    DrawEntities();
-
-    std::cout << mobList.size() << std::endl;
-
-    if(GetKey(olc::ESCAPE).bPressed){
-        bGameLoop = false;
-    }
+    // std::cout << mobList.size() << std::endl;
 
     return bGameLoop;
 }
@@ -335,7 +427,7 @@ void Gauntlet::updatePlayer(float fElapsedTime){
         vel = p1->getDirectionVector();
 
         
-        auto DetermineProjPos = [&](float x, float y){
+        auto DetermineProjPos = [&](){
 
             direction dir = p1->getVelocityDirection();
             olc::vf2d ppos = p1->getPosition(), size = p.getSize(), projPos;
@@ -346,11 +438,14 @@ void Gauntlet::updatePlayer(float fElapsedTime){
                 p.setSize({size.y, size.x });
             
             ppos = ppos + p1->getSize() / 2.0f;
-            projPos = ppos + p.getSize() * p1->getVelocity().norm();
+            projPos = ppos + p.getSize() * vel.norm();
 
+            return projPos;
         };
 
-        p.setPosition( p1->getPosition().x + p.getSize().x*vel.x , p1->getPosition().y + p.getSize().y*vel.y );
+        
+        p.setPosition(DetermineProjPos());
+        // p.setPosition( p1->getPosition().x + p1->getSize().x + p.getSize().x*vel.x , p1->getPosition().y + p.getSize().y*vel.y );
 
         p.setVelocity( vel.x * p.getSpeed() , vel.y * p.getSpeed());
 
@@ -742,7 +837,8 @@ bool Gauntlet::ResolveCollision(Dynamic* pDyn, const float fTimeStep, Tile* pTil
 
             }else if(tileType >= 32 && tileType <= 33){
                 // exit
-                bGameLoop = false;
+                gamestate = GameState::OVER;
+                // exitPos = { (index / horTiles)*16.0f ,(index % horTiles)*16.0f};
 
             }else if (tileType != 19){
                 // solidTile
@@ -921,6 +1017,9 @@ void Gauntlet::DrawLevel(){
 
             type = tile->getType();
 
+            if(type == 32 || type == 33)
+                exitPos = { (float)i*16 - fTileOffsetX, (float)j*16 - fTileOffsetY};
+
             DrawPartialDecal( { (float) i*16 - fTileOffsetX , (float)j*16 - fTileOffsetY }, decalList[0], {(float) (type%8)*16, (float) (type/8)*16 }, {16,16});
 
         } 
@@ -964,10 +1063,24 @@ void Gauntlet::DrawEntities(){
         offy = (vertTiles - yScreenOffset)*16 - playerPosition.y;
 
     // Draw Player
-    DrawPartialDecal( { (float)(ScreenWidth()/2.0f - offx) , (float)(ScreenHeight()/2.0f - offy) }, decalList[1], { (float) p1->getDir()*16, 16*frameBool}, {16, 16} );
 
+    olc::vf2d screenPos = { (float)(ScreenWidth()/2.0f - offx) , (float)(ScreenHeight()/2.0f - offy) };
+    
+    if(gamestate == GameState::OVER)
+    {   
+
+        float angle = (ExitGameCounter%10) * (3.14/10.0f);
+        DrawPartialRotatedDecal( exitPos + p1->getSize()/2.0f, decalList[1], angle, p1->getSize()/2.0f, {(float) p1->getDir()*16, 0.0f}, {16,16});
+        ExitGameCounter--;
+
+    }else{
+
+        DrawPartialDecal( screenPos, decalList[1], { (float) p1->getDir()*16, (float) 16*frameBool}, {16, 16} );
+    }
+        
 
     // Draw mobs
+    
     int x0,y0,x1,y1;
     float fOffsetX, fOffsetY;
 
@@ -1005,9 +1118,9 @@ void Gauntlet::DrawEntities(){
 
                     // DrawDecal( {  (float) mdx , (float) mdy } , decalList[2]);
                     if(m.getType() == 35)
-                        DrawPartialDecal( { (float) mdx , (float) mdy } , decalList[ 2 ] , { (float) m.getDir()*16, 16*frameBool}, {16, 16} );     
+                        DrawPartialDecal( { (float) mdx , (float) mdy } , decalList[ 2 ] , { (float) m.getDir()*16, (float)16*frameBool}, {16, 16} );     
                     else if(m.getType() == 36)
-                        DrawPartialDecal( { (float) mdx , (float) mdy } , decalList[ 3 ] , { (float) m.getDir()*16, 16*frameBool}, {16, 16} );
+                        DrawPartialDecal( { (float) mdx , (float) mdy } , decalList[ 3 ] , { (float) m.getDir()*16, (float)16*frameBool}, {16, 16} );
 
                 }
         }

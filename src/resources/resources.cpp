@@ -35,11 +35,9 @@ void Resources::loadSprites(){
     load("demon", "data/sprites/dynamic/enemy02.png");
     load("info1", "data/sprites/static/info1.png");
     load("info2", "data/sprites/static/info2.png");
-
-
-
-
-
+    
+    load("startScreen", "data/sprites/static/startScreen.png");
+    load("pauseScreen", "data/sprites/static/pauseScreen.png");
 }
 
 

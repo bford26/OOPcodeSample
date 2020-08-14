@@ -1,57 +1,57 @@
-# compiler option
+
+
 CC = g++
 
-# c++ version and error checking
 CXXFLAGS = -std=c++17 # -Wall -Werror -Wextra -pedantic
- 
-#  required LIBS for olcPGEX
-LIBS  = -lstdc++fs
-LIBS += -luser32
-LIBS += -lgdi32
-LIBS += -lopengl32
-LIBS += -lgdiplus
-LIBS += -lShlwapi
 
-# Used only with MINGW if required
-# LIBS += -lmingw32  
-# LIBS += -mwindows
-# LIBS += -L/mingw64/lib
+file_depth = ../..
+
+# for each folder compile the files in the folder, then enter the next folder until no more folders
+
+# SUB_DIRS = $(filter %/, $(shell ls -F ./))
 
 
-# gets path back to
-# ROOT_DIR  = $(shell cd ../.. && pwd)
+# tile,
+# 	dynamic,
+# 		entity,
+# 			mob, player
+# 		projectile
 
-# gets a list of all subsequent dirs while excluding the object folders
-DIRS  = $(patsubst %/, %, $(filter-out obj/, $(filter %/, $(shell ls -F))))
+# 	static,
+# 		interactionBlock
 
-# finds all source files (*.cpp) 
-SRCS  = $(wildcard *.cpp)
-SRCS += $(foreach dir, $(DIRS), $(patsubst $(dir)/%.cpp, %.cpp, $(wildcard $(dir)/*.cpp)))
+includes  = ./../tile/
+includes += ./../tile/dynamic/
+includes += ./../tile/dynamic/entity/
+includes += ./../tile/dynamic/entity/player/
+includes += ./../tile/dynamic/entity/mob/
+includes += ./../tile/dynamic/projectile/
+includes += ./../tile/static/
+includes += ./../tile/static/interactionBlock/
+includes += ./../resources/
 
-# gets a list of all dependencies in current and subsequent dirs
-INC  = $(wildcard *.h) 
-INC += $(foreach dir, $(DIRS), $(wildcard ./$(dir)/*.h))
-
-# makes list of object names & path to obj dir
-OBJS = $(patsubst %.cpp, ./obj/%.o, $(SRCS))
-
-
-LOCAL_DIRS = $(patsubst %/, %, $(filter-out main/, $(filter-out gauntlet/,$(filter %/, $(shell ls -F ..)))))
-LOCAL_INC = $(patsubst %, -I../%, $(LOCAL_DIRS))
+INC = $(patsubst %, -I%, $(includes))
 
 
-# Gets the external dependencies dirs, this case olcPGEX
-EXT_DIRS = $(patsubst %/, %, $(filter-out obj/, $(filter %/, $(shell ls -F ../../ext/)))) 
-# includes the path to the external dependencies
-EXT_INC = $(patsubst %, -I../../ext/%, $(EXT_DIRS))
+SRCS = $(wildcard *.cpp)
+OBJS = $(patsubst %.cpp, ./$(file_depth)/bin/%.o, $(SRCS))
 
-compile: $(OBJS) $(INC)
+# UPPER_INC  = -I../
+# UPPER_INC += -I../../
 
-./obj/%.o: %.cpp $(INC)
-	$(CC) $(CXXFLAGS) $(LOCAL_INC) $(EXT_INC) -c $< -o $@ $(LIBS)
+EXT_DIRS = $(patsubst %/, %, $(filter %/, $(shell ls -F ./$(file_depth)/include)))
+EXT_INC = $(patsubst %, -I$(file_depth)/include/%, $(EXT_DIRS))
+
+
+
+
+# =======================================
+
+
+compile: $(OBJS)
+
+./$(file_depth)/bin/%.o: %.cpp %.h#$()
+	$(CC) $(CXXFLAGS) $(INC) $(EXT_INC) -c $< -o $@
 
 clean:
-	rm -f ./obj/*.o 
-
-test:
-	@echo $(LOCAL_DIRS)
+	rm -f ./$(file_depth)/bin/*.o

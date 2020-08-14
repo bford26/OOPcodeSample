@@ -1,7 +1,7 @@
 #ifndef GAME_CLASS_H
 #define GAME_CLASS_H
 
-#include "olcPixelGameEngine.h"
+// #include "olcPixelGameEngine.h"
 // Dynamic and entity includes
 #include "player.h"
 #include "mob.h"
@@ -10,6 +10,15 @@
 #include "interactionBlock.h"
 // singlton include for resource management
 #include "resources.h"
+
+
+enum GameState {
+
+    START, GAME, PAUSED, OVER,
+
+};
+
+
 
 class Gauntlet : public olc::PixelGameEngine {
 
@@ -34,8 +43,14 @@ private:
     olc::Decal *infoDecal1 = nullptr, *infoDecal2 = nullptr;
 
     int nLevel = 0;
-    int ExitGame = 10;
+    int ExitGameCounter = 1000;
     bool bGameLoop = true;
+    olc::vf2d exitPos = {0.0f, 0.0f};
+
+    olc::Decal *utilDecal = nullptr;
+
+    GameState gamestate;
+    int PauseChoice = -1;
 
     float lastTime, curTime;
 
