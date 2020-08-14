@@ -26,6 +26,9 @@ int Dynamic::getId() const {
 void Dynamic::setVelocity(float vx_, float vy_){
     vel = {vx_ , vy_};
 }
+void Dynamic::setVelocity(olc::vf2d vel_){
+    vel = vel_;
+}
 
 void Dynamic::setSpeed(int speed_){
     speed = speed_;

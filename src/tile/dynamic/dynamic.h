@@ -26,6 +26,7 @@ public:
 
     // setters
     void setVelocity(float vx_, float vy_);
+    void setVelocity(olc::vf2d vel_);
     void setSpeed(int speed_);
     void setDir(direction dir_);
     void setId(int id_);

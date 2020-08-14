@@ -182,6 +182,11 @@ bool Gauntlet::OnUserDestroy(){
     return true;
 }   
 
+
+
+
+
+
 void Gauntlet::DrawDecals(){
 
 }
@@ -681,25 +686,10 @@ void Gauntlet::utilFunc(float fElapsedTime){
 
 }
 
-// This function will return a bool if a point provided is inside the bounds of a tile object
-// pTile is pointer to the Tile
-// p is the 2D float passed by reference, which holds the point location
-bool Gauntlet::PointVsTile(const olc::vf2d& p, const Tile* pTile){
 
-    olc::vf2d pos = pTile->getPosition();
-    olc::vf2d size = pTile->getSize();
 
-    return (p.x >= pos.x && p.y >= pos.y && p.x < pos.x + size.x && p.y < pos.y + size.y);
-}
 
-// TileVsTile returns true if the two Tile objects are overlapping
-bool Gauntlet::TileVsTile(const Tile* pt1, const Tile* pt2){
 
-    olc::vf2d t1Pos = pt1->getPosition(), t1Size = pt1->getSize();
-    olc::vf2d t2Pos = pt2->getPosition(), t2Size = pt2->getSize();
-
-    return (t1Pos.x < t2Pos.x + t2Size.x && t1Pos.x + t1Size.x > t2Pos.x && t1Pos.y < t2Pos.y + t2Size.y && t1Pos.y + t1Size.y > t2Pos.y);
-}
 
 // RayVsTile returns true if a ray passing through the passed target Tile
 // this function also calculates the first contact_point for a ray and tile
@@ -754,6 +744,64 @@ bool Gauntlet::RayVsTile(const olc::vf2d& ray_origin, const olc::vf2d& ray_dir, 
 
 }
 
+bool Gauntlet::RayVsDynamic(const olc::vf2d& ray_origin, const olc::vf2d& ray_dir, const Dynamic* target, const float fTimeStep, olc::vf2d& contact_point, olc::vf2d& contact_normal, float& t_hit_near)
+{
+
+    // ray_origin is the expanded posistion
+    // ray_dir is the entity velocity * fTimeStep
+    // target is the Dynamic object 
+
+    contact_normal = {0,0};
+    contact_point = {0,0};
+
+    olc::vf2d invdir = 1.0f / ray_dir;
+    olc::vf2d t_near, t_far, pos, size, nextpos;
+
+    pos = target->getPosition();
+    nextpos = pos + fTimeStep * target->getVelocity();
+    size = target->getSize();
+
+    t_near = (nextpos - ray_origin) * invdir;
+    t_far = (nextpos + size - ray_origin) * invdir;
+
+
+    if(std::isnan(t_far.y) || std::isnan(t_far.x)) return false;
+    if(std::isnan(t_near.y) || std::isnan(t_near.x)) return false;
+
+
+    if(t_near.x > t_far.x) std::swap(t_near.x, t_far.x);
+    if(t_near.y > t_far.y) std::swap(t_near.y, t_far.y);
+
+
+    if(t_near.x > t_far.y || t_near.y > t_far.x) return false;
+
+    
+    t_hit_near = std::max(t_near.x, t_near.y);
+
+    float t_hit_far = std::min(t_far.x, t_far.y);
+
+
+    if(t_hit_far < 0) return false;
+
+    contact_point = ray_origin + t_hit_far * ray_dir;
+
+    if(t_near.x > t_near.y)
+        if(invdir.x < 0)
+            contact_normal = {1, 0};
+        else
+            contact_normal = {-1, 0};
+    else if( t_near.x < t_near.y)
+        if(invdir.y < 0)
+            contact_normal = {0 , 1};
+        else
+            contact_normal = {0, -1};
+
+    return true;
+
+}
+
+
+
 // DynVsTile is used for Dynamic and Tile object collisions 
 // returns true if a collision will happen
 bool Gauntlet::DynamicVsTile(const Dynamic* pDyn, const float fTimeStep, const Tile& pTile, olc::vf2d& contact_point, olc::vf2d& contact_normal, float& contact_time){
@@ -773,27 +821,50 @@ bool Gauntlet::DynamicVsTile(const Dynamic* pDyn, const float fTimeStep, const T
         return false;
 }
 
-// Calling this function will make sure no collisions are allowed and that the dynamic obj will still move if collisions occur
-bool Gauntlet::ResolveCollision(Dynamic* pDyn, const float fTimeStep, Tile* pTile, int index){
+bool Gauntlet::EntityVsDynamic(const Entity* pEnt, const float fTimeStep, const Dynamic& pDyn, olc::vf2d& contact_point, olc::vf2d& contact_normal, float& contact_time)
+{
 
+    olc::vf2d entVel = pEnt->getVelocity();
+    olc::vf2d dynVel = pDyn.getVelocity();
+
+    // niether are moving so no collosion can happen
+    if(dynVel.mag() == 0.0f && entVel.mag() == 0.0f)
+        return false;
+
+    Dynamic expanded_target;
+    expanded_target.setPosition( pDyn.getPosition() - pEnt->getSize() / 2.0f );
+    expanded_target.setSize( pDyn.getSize() + pEnt->getSize() );
+    expanded_target.setVelocity(pDyn.getVelocity());
+
+    if(RayVsDynamic(pEnt->getPosition() + pEnt->getSize()/2.0f, entVel * fTimeStep, &expanded_target, fTimeStep, contact_point, contact_normal, contact_time))
+        return (contact_time >= 0.0f && contact_time < 1.0f);
+    else
+        return false;
+
+}
+
+
+
+bool Gauntlet::ResColl_DynamicVsTile(Dynamic* pDyn, const float fTimeStep, Tile* pTile, int index)
+{
     olc::vf2d contact_point, contact_normal;
     float contact_time = 0.0f;
 
     if(DynamicVsTile(pDyn, fTimeStep, *pTile, contact_point, contact_normal, contact_time))
     {
+        int type = pDyn->getType(), tileType = pTile->getType();
 
-        int tileType = pTile->getType();
-        
-        if( pDyn->getType() == 34 )
+        if(type == 34)
         {
-        
-            if(tileType == 20)
-            {
+
+            if(tileType == 20){
+                
                 // key
                 p1->keyValue++;
                 gameObjects[index]->setType(19);
 
-            }else if(tileType >= 21 && tileType <= 22 && p1->keyValue > 0){
+            }else if((tileType == 21 || tileType == 22) && p1->keyValue > 0){
+
 
                 // Door
                 p1->keyValue--;
@@ -817,7 +888,10 @@ bool Gauntlet::ResolveCollision(Dynamic* pDyn, const float fTimeStep, Tile* pTil
                     }
                 }
 
+
             }else if(tileType >= 23 && tileType <= 25){
+
+
                 // consumable
                 if(tileType == 23)
                     p1->treasure + 100;
@@ -828,138 +902,142 @@ bool Gauntlet::ResolveCollision(Dynamic* pDyn, const float fTimeStep, Tile* pTil
 
                 gameObjects[index]->setType(19);
 
-            }else if(tileType >= 26 && tileType <= 31){
-                // spawners
-                p1->setHp( p1->getHp() - (tileType - 25)*50 );
-                gameObjects[index]->setType(19);
+
 
             }else if(tileType >= 32 && tileType <= 33){
+
                 // exit
                 gamestate = GameState::OVER;
-                // exitPos = { (index / horTiles)*16.0f ,(index % horTiles)*16.0f};
 
-            }else if (tileType != 19){
+            }else{
+
+                // if not floor, needs to have a collision
+                if(tileType != 19)
+                {
+
+                    // solidTile
+                    olc::vf2d dynVel = pDyn->getVelocity();
+                    dynVel += contact_normal * olc::vf2d(std::abs(dynVel.x) , std::abs(dynVel.y)) * (1 - contact_time);
+                    pDyn->setVelocity(dynVel.x, dynVel.y);
+
+                }
+
+
+            }
+
+        }else if( type == 35 || type == 36 ){
+        // mob
+
+            if(tileType != 19)
+            {
+
                 // solidTile
                 olc::vf2d dynVel = pDyn->getVelocity();
                 dynVel += contact_normal * olc::vf2d(std::abs(dynVel.x) , std::abs(dynVel.y)) * (1 - contact_time);
                 pDyn->setVelocity(dynVel.x, dynVel.y);
+
             }
 
-       }else if( pDyn->getType() == 35 || pDyn->getType() == 36 ){
+        }else if( type >= 37 && type <= 40 ){
+        // projectile 
 
-           if(  !(tileType >= 23 && tileType <= 25) && !(tileType >= 19 && tileType <= 20)   )
-           {
-               // solidTile
-               olc::vf2d dynVel = pDyn->getVelocity();
-               dynVel += contact_normal * olc::vf2d(std::abs(dynVel.x) , std::abs(dynVel.y)) * (1 - contact_time);
-               pDyn->setVelocity(dynVel.x, dynVel.y);
-           }
 
-       }else if( pDyn->getType() >= 37 && pDyn->getType() <= 40 ){
+            if( tileType >= 0 && tileType <= 18 )
+            {
+                // hits a wall
+                pDyn->dead = true;
 
-           if(tileType >= 0 && tileType <= 18)
-           {
-               pDyn->dead = true;
-               // solidTile
-               olc::vf2d dynVel = pDyn->getVelocity();
-               dynVel += contact_normal * olc::vf2d(std::abs(dynVel.x) , std::abs(dynVel.y)) * (1 - contact_time);
-               pDyn->setVelocity(dynVel.x, dynVel.y);
+            }else if( tileType >= 26 && tileType <= 31 ){
 
-           }else if(tileType >= 26 && tileType <= 31){
-                
                 pDyn->dead = true;
 
                 if(tileType == 26 || tileType == 29)
                     gameObjects[index]->setType(19);
                 else
                     gameObjects[index]->setType(tileType-1);
-               
-           }
 
+            }
 
-
-       }
-
-    //    if(tileType >= 0 && tileType <= 18)
-    //    if(tileType == 19)
-    //    if(tileType == 20)
-    //    if(tileType >= 21 && tileType <= 22)
-    //    if(tileType >= 23 && tileType <= 25)
-    //    if(tileType >= 26 && tileType <= 31)
-    //    if(tileType >= 32 && tileType <= 33)
-
-    //    if(tileType >= 35 && tileType <= 36)
-    //    if(tileType >= 37 && tileType <= 40)
+        } 
 
         return true;
     }
 
+
     return false;
 }
 
-// player vs mob  or mob vs mob or proj vs mob
-bool Gauntlet::ResolveCollision(Dynamic* pDyn, const float fTimeStep, Mob *m){
-
+bool Gauntlet::ResColl_EntityVsDynamic(Entity* pEnt, const float fTimeStep, Dynamic* pDyn)
+{
     olc::vf2d contact_point, contact_normal;
     float contact_time = 0.0f;
 
-    if (DynamicVsTile(pDyn, fTimeStep, *m, contact_point, contact_normal, contact_time) && m->dead == false)
+    if(EntityVsDynamic(pEnt, fTimeStep, *pDyn, contact_point, contact_normal, contact_time))
     {
-        if( pDyn->getType() == 34 )
-        {
-            if( m->getType() == 35 || m->getType() == 36 )
-            {
-                p1->setHp(p1->getHp() - 50);
-                m->setHp(m->getHp() - 50);
+
+        int type = pEnt->getType(), dynType = pDyn->getType();
+
+        if( type == 34){
+
+
+            if( dynType == 35 || dynType == 36){
+
+                auto getMob = [&](int id){
+
+                    for(auto &m : mobList){
+
+                        if( m.getId() == id)
+                        {
+                            return &m;
+                        }
+
+                    }
+
+                };
+
+                Mob* m0 = getMob(pDyn->getId());
+                m0->dead = true;
+                pEnt->setHp(pEnt->getHp() - 50);
+
+            }else if(dynType == 40){
+
+                pDyn->dead = true;
+                pEnt->setHp( pEnt->getHp() - 50 );
 
             }
-        }
-        else if( pDyn->getType() == 35 || pDyn->getType() == 36 )
-        {
-            // acts like solidTile
-            olc::vf2d dynVel = pDyn->getVelocity();
-            dynVel += contact_normal * olc::vf2d(std::abs(dynVel.x) , std::abs(dynVel.y)) * (1 - contact_time);
-            pDyn->setVelocity(dynVel.x, dynVel.y);
+
+
+        }else if( type == 35 || type == 36){
+
+            // mob vs proj
+
+            if(dynType >= 37 && type <= 39)
+            {
+
+                // proj is dead
+                pDyn->dead = true;
+                pEnt->setHp(pEnt->getHp() - 100);
+                
+            }
+
+
 
         }
-        else if(pDyn->getType() >= 37 && pDyn->getType() <= 39 && pDyn->dead == false)
-        {
-            m->setHp(m->getHp() - 100);
-            pDyn->dead = true;
-        }
-
-        if(m->getHp() <= 0)
-            m->dead = true;
 
         return true;
-
     }
 
     return false;
 }
 
-// dynamic vs proj
-bool Gauntlet::ResolveCollision(Dynamic* pDyn, const float fTimeStep, Proj *p){
 
-    olc::vf2d contact_point, contact_normal;
-    float contact_time = 0.0f;
 
-    if (DynamicVsTile(pDyn, fTimeStep, *p, contact_point, contact_normal, contact_time) && p->dead == false)
-    {
-        if( pDyn->getType() == 34 )
-        {
-            if( p->getType() == 40 )
-            {
-                p1->setHp(p1->getHp() - 50);
-                p->dead = true;
-            }
-        }
 
-        return true;
-    }
 
-    return false;
-}
+
+
+
+
 
 void Gauntlet::DrawLevel(){
 
@@ -1234,3 +1312,7 @@ void Gauntlet::updateTiles(float fElapsedTime){
         }   
     }
 }
+
+
+
+

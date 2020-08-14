@@ -72,15 +72,25 @@ private:
 public:
 
     // collision detection 
+    bool RayVsTile(const olc::vf2d& ray_origin, const olc::vf2d& ray_dir, const Tile* target, olc::vf2d& contact_point, olc::vf2d& contact_normal, float& t_hit_near);
+    bool RayVsDynamic(const olc::vf2d& ray_origin, const olc::vf2d& ray_dir, const Dynamic* target, const float fTimeStep, olc::vf2d& contact_point, olc::vf2d& contact_normal, float& t_hit_near);
+
+    // determine 
+    bool DynamicVsTile(const Dynamic* pDyn, const float fTimeStep, const Tile& pTile, olc::vf2d& contact_point, olc::vf2d& contact_normal, float& contact_time);
+    bool EntityVsDynamic(const Entity* pEnt, const float fTimeStep, const Dynamic& pDyn, olc::vf2d& contact_point, olc::vf2d& contact_normal, float& contact_time);
+    
+
+    bool ResColl_DynamicVsTile(Dynamic* pDyn, const float fTimeStep, Tile* pTile, int index);
+    bool ResColl_EntityVsDynamic(Entity* pEnt, const float fTimeStep, Dynamic* pDyn);
+
+
+
+    // to be deleted
     bool PointVsTile(const olc::vf2d& p, const Tile* pTile);
     bool TileVsTile(const Tile* pt1, const Tile* pt2);
-    bool RayVsTile(const olc::vf2d& ray_origin, const olc::vf2d& ray_dir, const Tile* target, olc::vf2d& contact_point, olc::vf2d& contact_normal, float& t_hit_near);
-    bool DynamicVsTile(const Dynamic* pDyn, const float fTimeStep, const Tile& pTile, olc::vf2d& contact_point, olc::vf2d& contact_normal, float& contact_time);
-
     bool ResolveCollision(Dynamic* pDyn, const float fTimeStep, Tile* pTile, int index);
     bool ResolveCollision(Dynamic* pDyn, const float fTimeStep, Mob  *m);
     bool ResolveCollision(Dynamic* pDyn, const float fTimeStep, Proj *p);
-
 
 
 

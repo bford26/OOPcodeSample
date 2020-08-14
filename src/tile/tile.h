@@ -17,6 +17,7 @@ public:
   olc::vf2d getSize() const;
   int getType() const;
   bool getSolidTile() const;
+  int getId() const;
 
   // setters
   void setPosition(float x_, float y_);
@@ -24,7 +25,7 @@ public:
   void setSize(olc::vf2d size_);
   void setType(int type_);
   void setSolidTile(bool EntvsTile_);
-
+  void setId(int id_);
 
 public:
 
@@ -36,6 +37,7 @@ protected:
   olc::vf2d size = { 16.0f , 16.0f };
   bool solidTile = false;
   int tileType;
+  int id;
 
 
 

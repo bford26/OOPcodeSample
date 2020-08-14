@@ -20,6 +20,10 @@ bool Tile::getSolidTile() const {
     return solidTile;
 }
 
+int Tile::getId() const {
+    return id;
+}
+
 void Tile::setPosition(float x_, float y_){
     pos = { x_ ,  y_ };
 }
@@ -40,7 +44,9 @@ void Tile::setSolidTile(bool EntvsTile_){
     solidTile = EntvsTile_;
 }
 
-
+void Tile::setId(int id_){
+    id = id_;
+}
 
 
 
