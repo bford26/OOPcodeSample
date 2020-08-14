@@ -88,7 +88,7 @@ bool Gauntlet::OnUserUpdate(float fElapsedTime){
 
         curTime += fElapsedTime;
 
-        if(curTime - lastTime >= 1.0f)
+        if(curTime - lastTime >= 0.5f)
         {
             frameBool = !frameBool;
             lastTime = curTime; 
@@ -99,8 +99,6 @@ bool Gauntlet::OnUserUpdate(float fElapsedTime){
         updateMobs(fElapsedTime);
         updateProjectiles(fElapsedTime);
         // updateTiles(fElapsedTime);
-        // utilFunc(fElapsedTime);
-        // DrawDecals();
 
         DrawLevel();
         DrawEntities();
@@ -427,24 +425,24 @@ void Gauntlet::updatePlayer(float fElapsedTime){
         vel = p1->getDirectionVector();
 
         
-        auto DetermineProjPos = [&](){
+        // auto DetermineProjPos = [&](){
 
-            direction dir = p1->getVelocityDirection();
-            olc::vf2d ppos = p1->getPosition(), size = p.getSize(), projPos;
+        //     direction dir = p1->getVelocityDirection();
+        //     olc::vf2d ppos = p1->getPosition(), size = p.getSize(), projPos;
             
-            if(dir == direction::E || dir == direction::W)
-                // north west no change to size
-                // east or west then swap the size x and y
-                p.setSize({size.y, size.x });
+        //     if(dir == direction::E || dir == direction::W)
+        //         // north west no change to size
+        //         // east or west then swap the size x and y
+        //         p.setSize({size.y, size.x });
             
-            ppos = ppos + p1->getSize() / 2.0f;
-            projPos = ppos + p.getSize() * vel.norm();
+        //     ppos = ppos + p1->getSize() / 2.0f;
+        //     projPos = ppos + p.getSize() * vel.norm();
 
-            return projPos;
-        };
+        //     return projPos;
+        // };
 
         
-        p.setPosition(DetermineProjPos());
+        p.setPosition(p1->getPosition());
         // p.setPosition( p1->getPosition().x + p1->getSize().x + p.getSize().x*vel.x , p1->getPosition().y + p.getSize().y*vel.y );
 
         p.setVelocity( vel.x * p.getSpeed() , vel.y * p.getSpeed());
