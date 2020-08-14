@@ -52,6 +52,9 @@ private:
     GameState gamestate;
     int PauseChoice = -1;
 
+
+    float spawnRate = 2.0f;
+
     float lastTime, curTime;
 
     // which frame to use

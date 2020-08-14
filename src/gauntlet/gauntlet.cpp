@@ -91,14 +91,14 @@ bool Gauntlet::OnUserUpdate(float fElapsedTime){
         if(curTime - lastTime >= 0.5f)
         {
             frameBool = !frameBool;
-            lastTime = curTime; 
+            lastTime = curTime;
         }
 
         // this will update the player based on the input keys W,A,S,D 
         updatePlayer(fElapsedTime);
         updateMobs(fElapsedTime);
         updateProjectiles(fElapsedTime);
-        // updateTiles(fElapsedTime);
+        updateTiles(fElapsedTime);
 
         DrawLevel();
         DrawEntities();
@@ -1152,6 +1152,9 @@ void Gauntlet::DrawEntities(){
 
 void Gauntlet::updateTiles(float fElapsedTime){
 
+
+
+
     for(int i=0; i < vertTiles*horTiles; i++)
     {
 
@@ -1167,11 +1170,10 @@ void Gauntlet::updateTiles(float fElapsedTime){
 
             // make new mob in a postion 1 tile away from current tile position
 
-            if(curTime - lastTime >= 4.0)
-            {  
+            if(curTime - spawnRate >= 0)
+            {
 
-                lastTime = curTime;
-                curTime = 0.0f;
+                spawnRate *= 2;
                 
                 // get spawner pos
                 olc::vf2d mpos = gameObjects[i]->getPosition();
