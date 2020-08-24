@@ -1,7 +1,7 @@
 #include "tile.h"
 
 Tile::Tile(){}
-Tile::~Tile(){}
+// Tile::~Tile(){}
 
 
 olc::vf2d Tile::getPosition() const {

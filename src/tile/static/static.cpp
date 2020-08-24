@@ -2,7 +2,7 @@
 #include "static.h"
 
 Static::Static(){}
-Static::~Static(){}
+// Static::~Static(){}
 
 olc::vi2d Static::getPosition() const {
     return pos;
@@ -26,11 +26,12 @@ Wall::Wall(int type_){
     solidTile = true;
 }
 
-Wall::~Wall(){}
+// Wall::~Wall(){}
 
 Floor::Floor(){
 
     tileType = 19;
     solidTile = false;
 }
-Floor::~Floor(){}
+
+// Floor::~Floor(){}

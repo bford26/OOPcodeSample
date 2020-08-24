@@ -15,6 +15,8 @@ LIBS += -lShlwapi
 # LIBS += -mwindows
 # LIBS += -L/mingw64/lib
 
+# linux based
+LIBS = -lX11 -lGL -lpthread -lpng
 
 # gets a list of all subsequent dirs while excluding the object folders
 DIRS  = $(patsubst %/, %, $(filter-out obj/, $(filter %/, $(shell ls -F))))

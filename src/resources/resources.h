@@ -17,7 +17,7 @@ private:
 
     // making constructors private ensures the user will not be making copies or multiple instances of this class, which would be pointless
     Resources();
-    ~Resources();
+    // ~Resources();
 
 public:
 

@@ -8,7 +8,7 @@ class InteractionBlock : public Static {
 public:
 
     InteractionBlock();
-    ~InteractionBlock();
+    // ~InteractionBlock();
 
 };
 
@@ -17,7 +17,7 @@ class Key : public InteractionBlock {
 public:
 
     Key(int type_);
-    ~Key();
+    // ~Key();
 
 };
 
@@ -26,7 +26,7 @@ class Door : public InteractionBlock {
 public:
 
     Door(int type_);
-    ~Door();
+    // ~Door();
 
 };
 
@@ -35,7 +35,7 @@ class Consumable : public InteractionBlock {
 public:
 
     Consumable(int type_);
-    ~Consumable();
+    // ~Consumable();
 
 };
 
@@ -44,7 +44,7 @@ class Spawner : public InteractionBlock {
 public:
 
     Spawner(int type_);
-    ~Spawner();
+    // ~Spawner();
 
 };
 
@@ -53,7 +53,7 @@ class Exit : public InteractionBlock {
 public:
 
     Exit(int type_);
-    ~Exit();
+    // ~Exit();
 
 };
 

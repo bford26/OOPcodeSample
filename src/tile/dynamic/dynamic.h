@@ -37,6 +37,8 @@ public:
     olc::vf2d getDirectionVector();
     direction getVelocityDirection();
 
+    void update(float fTimeStep);
+
 private:
 
     olc::vf2d vel;

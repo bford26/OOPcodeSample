@@ -87,31 +87,45 @@ olc::vf2d Dynamic::getDirectionVector(){
 direction Dynamic::getVelocityDirection(){
 
     direction dir = Dynamic::getDir();
-    olc::vf2d vel = Dynamic::getVelocity().norm();
+    olc::vf2d v = Dynamic::getVelocity().norm();
 
-    if( vel.x == 1)
-        dir = direction::E;
-    else if( vel.y == 1)
-        dir = direction::S;
-    else if( vel.x == -1)
-        dir = direction::W;
-    else if( vel.y == -1)
-        dir = direction::N;
-
-    else if( vel.y > 0){
-
-        if( vel.x > 0 )
+    if(v.x > 0)
+    {
+        if(v.y == 0)
+            dir = direction::E;
+        else if( v.y > 0)
             dir = direction::SE;
-        else if( vel.x < 0  )
+        else if( v.y < 0)
+            dir = direction::NE;
+
+    }else if( v.x < 0 ){
+
+        if(v.y == 0)
+            dir = direction::W;
+        else if( v.y > 0)
             dir = direction::SW;
+        else if( v.y < 0)
+            dir = direction::NW;
 
     }else{
 
-        if( vel.x > 0 )
-            dir = direction::NE;
-        else if( vel.x < 0  )
-            dir = direction::NW;
+        if(v.y < 0)
+            dir = direction::N;
+        else if( v.y > 0)
+            dir = direction::S;
+
     }
 
     return dir;
+}
+
+
+
+void Dynamic::update(float fTimeStep)
+{
+    if(Dynamic::getVelocity().mag() != 0.0f)
+    {
+        Dynamic::setPosition( Dynamic::getPosition() + Dynamic::getVelocity() * fTimeStep );
+        Dynamic::setDir(Dynamic::getVelocityDirection());
+    }
 }

@@ -8,7 +8,7 @@ class Proj : public Dynamic {
 public:
 
     Proj(int type_);
-    ~Proj();
+    // ~Proj();
     
 };
 

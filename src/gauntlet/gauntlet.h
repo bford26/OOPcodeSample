@@ -40,7 +40,7 @@ private:
     int decalNum = 10;
 
     // used for display info
-    olc::Decal *infoDecal1 = nullptr, *infoDecal2 = nullptr;
+    olc::Decal *infoDecal1 = nullptr, *infoDecal2 = nullptr, *outlineDecal = nullptr;
 
     int nLevel = 0;
     int ExitGameCounter = 1000;
@@ -60,6 +60,27 @@ private:
     // which frame to use
     bool frameBool = false;
 
+    bool drawOutline = false;
+    bool oneSecond = false;
+
+    bool projShot = false;
+
+
+    using clock = std::chrono::high_resolution_clock;
+    using ms = std::chrono::milliseconds;
+    // using std::chrono::duration_cast;
+
+    clock::time_point cur_time = clock::now(), prev_time = clock::now();
+    uint64_t time_diff;
+
+
+private:aw
+
+    // input timing
+    clock::time_point Wpress, Apress, Spress, Dpress, minTime;
+
+
+
 private:
 
     // this is basically a way to take advantage of ploymorphism
@@ -72,6 +93,9 @@ private:
 public:
 
     // collision detection 
+
+    bool TileVsTile(const Tile* pt1, const Tile* pt2);
+
     bool RayVsTile(const olc::vf2d& ray_origin, const olc::vf2d& ray_dir, const Tile* target, olc::vf2d& contact_point, olc::vf2d& contact_normal, float& t_hit_near);
     bool RayVsDynamic(const olc::vf2d& ray_origin, const olc::vf2d& ray_dir, const Dynamic* target, const float fTimeStep, olc::vf2d& contact_point, olc::vf2d& contact_normal, float& t_hit_near);
 
@@ -85,15 +109,6 @@ public:
 
 
 
-    // to be deleted
-    bool PointVsTile(const olc::vf2d& p, const Tile* pTile);
-    bool TileVsTile(const Tile* pt1, const Tile* pt2);
-    bool ResolveCollision(Dynamic* pDyn, const float fTimeStep, Tile* pTile, int index);
-    bool ResolveCollision(Dynamic* pDyn, const float fTimeStep, Mob  *m);
-    bool ResolveCollision(Dynamic* pDyn, const float fTimeStep, Proj *p);
-
-
-
 public:
 
     bool OnUserCreate() override;
@@ -102,21 +117,24 @@ public:
 
 public:
 
+    // game loop functions
+    void playerCollisions(float fElapsedTime);
+    void mobCollisions(float fElapsedTime);
+    void projCollisions(float fElapsedTime);
+    
     void updatePlayer(float fElapsedTime);
-    void updateMobs(float fElapsedTime);
     void updateProjectiles(float fElapsedTime);
+    void updateMobs(float fElapsedTime);
     void updateTiles(float fElapsedTime);
 
-    void DrawDecals();
 
+    // drawing functionality
     void DrawLevel();
-    void DrawPlayer();
     void DrawEntities();
 
+
+    // io for loading the current game level choosen
     bool loadLevel(int index);
-
-    void utilFunc(float fElapsedTime);
-
 
 };
 

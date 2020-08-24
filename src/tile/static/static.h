@@ -10,7 +10,7 @@ class Static : public Tile {
 public:
 
     Static();
-    ~Static();
+    // ~Static();
 
 public:
 
@@ -33,7 +33,7 @@ class Wall : public Static {
 public:
 
     Wall(int type_);
-    ~Wall();
+    // ~Wall();
 
 };
 
@@ -42,7 +42,7 @@ class Floor : public Static {
 public:
 
     Floor();
-    ~Floor();
+    // ~Floor();
 
 };
 

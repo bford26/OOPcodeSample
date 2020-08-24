@@ -8,9 +8,7 @@ Player::Player(){
     Dynamic::setType(34);
 }
 
-Player::~Player(){
-
-}
+// Player::~Player(){}
 
 std::string Player::getName() const {
     return name;

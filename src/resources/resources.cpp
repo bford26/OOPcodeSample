@@ -2,7 +2,7 @@
 #include "resources.h"
 
 Resources::Resources(){}
-Resources::~Resources(){}
+// Resources::~Resources(){}
 
 olc::Sprite* Resources::getSprite(std::string name){
     return stringToSpriteMap[name];
@@ -38,6 +38,10 @@ void Resources::loadSprites(){
     
     load("startScreen", "data/sprites/static/startScreen.png");
     load("pauseScreen", "data/sprites/static/pauseScreen.png");
+
+    // debugging
+    load("outline", "data/sprites/static/EntityOutline.png");
+
 }
 
 

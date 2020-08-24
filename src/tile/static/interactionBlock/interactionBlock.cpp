@@ -2,48 +2,57 @@
 #include "interactionBlock.h"
 
 InteractionBlock::InteractionBlock(){}
-InteractionBlock::~InteractionBlock(){}
+// InteractionBlock::~InteractionBlock(){}
 
 Key::Key(int type_){
     tileType = type_;
     solidTile = true;
 }
 
-Key::~Key(){}
+// Key::~Key(){}
 
 Door::Door(int type_){
     tileType = type_;
     solidTile = true;
+
+    // if(type_ == 21)
+    // {
+    //     // vert door
+
+    //     // Door::setSize(  );
+
+    // }else if(type_ == 22){
+
+    // }
+
 }
-Door::~Door(){}
+// Door::~Door(){}
 
 Consumable::Consumable(int type_){
     tileType = type_;
     solidTile = true;
 }
-Consumable::~Consumable(){}
+// Consumable::~Consumable(){}
 
 Spawner::Spawner(int type_){
     tileType = type_;
     solidTile = true;
 }
-Spawner::~Spawner(){}
+// Spawner::~Spawner(){}
 
 Exit::Exit(int type_){
     
     tileType = type_;
 
-    // type 10 is a hidden exit 
     // this will change if the block is attacked!
     if(type_ == 32)
         solidTile = false;
 
-    //type 11 is the main exit
-    // else if(type_ == 30)
-    //     SolidTile = true;
+    else if(type_ == 33)
+        solidTile = true;
 
 }
-Exit::~Exit(){}
+// Exit::~Exit(){}
 
 
 

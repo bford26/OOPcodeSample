@@ -8,7 +8,7 @@ class Entity : public Dynamic {
 public:
 
     Entity();
-    ~Entity();
+    // ~Entity();
 
 public:
 

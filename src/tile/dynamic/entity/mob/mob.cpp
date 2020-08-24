@@ -19,5 +19,5 @@ Mob::Mob(int type_, float x_, float y_){
     Dynamic::setSpeed(50);
 }
 
-Mob::~Mob(){}
+// Mob::~Mob(){}
 

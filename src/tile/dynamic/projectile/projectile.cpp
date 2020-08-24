@@ -10,4 +10,4 @@ Proj::Proj(int type_){
     
 }
 
-Proj::~Proj(){}
+// Proj::~Proj(){}

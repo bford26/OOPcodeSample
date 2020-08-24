@@ -8,7 +8,7 @@ class Mob : public Entity {
 public:
 
     Mob(int type_, float x_, float y_);
-    ~Mob();
+    // ~Mob();
 
 };
 

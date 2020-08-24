@@ -1,7 +1,7 @@
 #include "entity.h"
 
 Entity::Entity(){}
-Entity::~Entity(){}
+// Entity::~Entity(){}
 
 int Entity::getHp() const {
     return hp;

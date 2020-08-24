@@ -8,7 +8,7 @@ class Tile {
 public:
 
   Tile();
-  ~Tile();
+  // ~Tile();
 
 public:
 

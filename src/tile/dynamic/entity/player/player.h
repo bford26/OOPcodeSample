@@ -8,7 +8,7 @@ class Player : public Entity {
 public:
 
     Player();
-    ~Player();
+    // ~Player();
 
 public:
 
