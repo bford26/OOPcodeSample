@@ -7,6 +7,9 @@ Gauntlet::Gauntlet(){
 
 }
 
+
+
+
 bool Gauntlet::OnUserCreate(){
 
     // Here we load all the data for the start of the game
@@ -14,7 +17,7 @@ bool Gauntlet::OnUserCreate(){
 
     Resources::get().loadSprites();
 
-    decalList = new olc::Decal* [5];
+    decalList = new olc::Decal* [decalNum];
 
     decalList[0] = new olc::Decal(Resources::get().getSprite("lvlSheet"));
     decalList[1] = new olc::Decal(Resources::get().getSprite("player"));
@@ -24,19 +27,15 @@ bool Gauntlet::OnUserCreate(){
 
     infoDecal1 = new olc::Decal(Resources::get().getSprite("info1"));
     infoDecal2 = new olc::Decal(Resources::get().getSprite("info2"));
-
     utilDecal = new olc::Decal(Resources::get().getSprite("startScreen"));
-
-    outlineDecal = new olc::Decal(Resources::get().getSprite("outline"));
+    //outlineDecal = new olc::Decal(Resources::get().getSprite("outline"));
 
 
     p1 = new Player();
     p1->setSpeed(100);
     p1->setHp(500);
     
-    /*
-    Typically a game menu would be used to choose the desired level, but for a simple demo game states are not required, the game just starts into a level automatically so the level can be hardcoded.
-    */ 
+    
     nLevel = 1;
     loadLevel(nLevel);
 
@@ -49,9 +48,6 @@ bool Gauntlet::OnUserCreate(){
     }
 
 
-    lastTime = 0.0f;
-    curTime = 0.0f;
-
     gamestate = GameState::START;
 
     minTime = std::chrono::high_resolution_clock::time_point::min();
@@ -59,36 +55,122 @@ bool Gauntlet::OnUserCreate(){
     Apress = Wpress;
     Spress = Wpress;
     Dpress = Wpress;
+    Wrelease = Wpress;
+    Arelease = Wpress;
+    Srelease = Wpress;
+    Drelease = Wpress;
+
 
     return true;
 }
 
 bool Gauntlet::OnUserUpdate(float fElapsedTime){
 
+    
+    // if user does not have view on the application window, the game will be paused
+    if (gamestate == GameState::GAME && !IsFocused())
+        gamestate = GameState::PAUSED;
 
-    // std::cout << GetMouseX() << " , " << GetMouseY() << std::endl;
 
-
-    switch (gamestate)
+    if (gamestate == GameState::GAME)
     {
 
-    case 0:
-        // START
+        // Physics  - timing, Fixed updates, manage collisions
+        cur_time = clock::now();
+        time_diff = std::chrono::duration_cast<ms>(cur_time - prev_time).count();
+        if (time_diff >= 1000.0000)
+        {
+            prev_time = cur_time;
+            p1->setHp(p1->getHp() - 1.0f);
+
+            // reset projShot
+            projShot = false;
+        }
+
+        // handles all collisions
+        CheckCollisions(fElapsedTime);
+
+        // Get the offx and offy for any screen to world or visversa calls
+        GetScreenWorldBounds();
+
+
+        ////////////////////////////////////////////////////////////////////////////////////
+
+
+        // Render Game Data
+        DrawLevel();
+        DrawInfo();
+        DrawEntities();
+
+
+        ///////////////////////////////////////////////////////////////////////////////////
+
+
+        // Game Logic
+        updateTiles(fElapsedTime);
+        p1->update(fElapsedTime);
+        updateProjectiles(fElapsedTime);
+        updateMobs(fElapsedTime);
+
+
+        ///////////////////////////////////////////////////////////////////////////////////
+
+
+        // Input Events
+        GatherInputs(); // movement, create projectiles, use ability
+
+    }
+    else if (gamestate == GameState::PAUSED)
+    {
+
+        if (utilDecal == nullptr)
+            utilDecal = new olc::Decal(Resources::get().getSprite("pauseScreen"));
+
+        // 0 means resume 1 means exit
+        if (PauseChoice == 0)
+        {
+            if (GetKey(olc::S).bPressed)
+                PauseChoice = 1;
+            else if (GetKey(olc::SPACE).bPressed) {
+
+                gamestate = GameState::GAME;
+                
+            }
+        }
+        else if (PauseChoice == 1) {
+
+            if (GetKey(olc::W).bPressed)
+                PauseChoice = 0;
+            else if (GetKey(olc::SPACE).bPressed)
+                bGameLoop = false;
+        }
+
+        DrawPartialDecal({ ScreenWidth() / 2.0f - 40.0f, ScreenHeight() / 2.0f - 26.0f }, utilDecal, { PauseChoice * 80.0f, 0.0f }, { 79.0f, 52.0f });
+
+        if (gamestate == GameState::GAME)
+        {
+            delete utilDecal;
+            utilDecal = nullptr;
+        }
+
+    }
+    else if (gamestate == GameState::START)
+    {
+
         // draw start screen
         // check if any button pressed to start game
+        DrawDecal({ 0.0f,0.0f }, utilDecal);
 
-        DrawDecal( {0.0f,0.0f} , utilDecal);
-        
-        for(int i=1; i<85; i++)
+        for (int i = 1; i < 85; i++)
         {
-            if( GetKey( (olc::Key) i ).bPressed )
+            if (GetKey((olc::Key) i).bPressed)
             {
                 gamestate = GameState::GAME;
 
                 // no longer need utilDecal
                 delete utilDecal;
                 utilDecal = nullptr;
-                
+
                 cur_time = clock::now();
                 prev_time = clock::now();
 
@@ -96,143 +178,16 @@ bool Gauntlet::OnUserUpdate(float fElapsedTime){
             }
         }
 
-
-
-        break;
-
-    case 1:
-        // Game
-        // do basic game loop
-        // check if player has hit escape to pause game
-
-
-        // accurate one second clock
-        cur_time = clock::now();
-        time_diff = std::chrono::duration_cast<ms>(cur_time - prev_time).count();
-        if( time_diff >= 1000.0000000)
-        {
-            prev_time = cur_time;
-            
-            oneSecond = true;
-            p1->setHp(p1->getHp() - 1.0f );
-
-            // reset projShot
-            projShot = false;
-        }
-
-
-
-
-
-
-
-
-
-
-
-        if(GetKey(olc::Z).bPressed)
-            drawOutline = !drawOutline;
-
-        /*
-            GAME LOOP PROCESSES
-
-            1.  GET INPUT FROM USER
-
-            2.  COLLISION DETECTION ORDER
-                a.  player vs tiles
-                b.  proj vs tiles
-                c.  mob vs tiles
-                d.  player vs mob
-                e.  mob vs projectiles
-                f.  player vs projectiles
-
-
-            3.  UPDATE ORDER
-                a.  update player
-                b.  update tiles
-                c.  update mobs
-                d.  update projectiles
-
-            4.  DRAW ORDER
-                a.  drawlevel
-                b.  drawentities
-        */
-
-
-        // this will update the player based on the input keys W,A,S,D     
-
-        updatePlayer(fElapsedTime);
-        updateProjectiles(fElapsedTime);
-        // updateMobs(fElapsedTime);
-
-        // updateTiles(fElapsedTime);
-
-
-
-
-        DrawLevel();
-        DrawEntities();
-
-
-        if(GetKey(olc::ESCAPE).bPressed){
-            gamestate = GameState::PAUSED;
-        }
-
-        // reset the 1 sec timer
-        oneSecond = false;
-
-        break;
-
-    case 2:
-        // PAUSED
-        // overlay pause screen give exit option and a resume option
-        
-        if(PauseChoice == -1)
-            PauseChoice = 0;
-
-        if(utilDecal == nullptr)
-            utilDecal = new olc::Decal(Resources::get().getSprite("pauseScreen"));
-
-        // 0 means resume 1 means exit
-        if(PauseChoice == 0)
-        {
-            if(GetKey(olc::S).bPressed)
-                PauseChoice = 1;
-            else if(GetKey(olc::SPACE).bPressed){
-                
-                gamestate = GameState::GAME;
-                delete utilDecal;
-                utilDecal = nullptr;
-                break;
-            }
-        }else if(PauseChoice == 1){
-
-            if(GetKey(olc::W).bPressed)
-                PauseChoice = 0;
-            else if(GetKey(olc::SPACE).bPressed)
-                bGameLoop = false;
-        }
-
-        DrawPartialDecal( { ScreenWidth()/2.0f - 40.0f, ScreenHeight()/2.0f - 26.0f }, utilDecal, { PauseChoice * 80.0f, 0.0f }, { 79.0f, 52.0f });
-        break;
-
-    case 3:
-        // OVER
-        // move the player to the exit and spin them few times then set GameLoop to false;
-                
-        DrawLevel();
-        DrawEntities();
-
-        if(ExitGameCounter == 0)
-            bGameLoop = false;
-
-        break;
-
-    default:
-        break;
     }
+    else if (gamestate == GameState::OVER)
+    {
 
-    // std::cout << mobList.size() << std::endl;
+        DrawLevel();
+        DrawEntities();
+
+        if (ExitGameCounter == 0)
+            bGameLoop = false;
+    }
 
     return bGameLoop;
 }
@@ -243,7 +198,7 @@ bool Gauntlet::OnUserDestroy(){
 
     delete p1;
 
-    for(int i=0; i<5; i++)
+    for(int i=0; i<decalNum; i++)
         delete decalList[i];
     delete[] decalList;
 
@@ -328,7 +283,7 @@ bool Gauntlet::loadLevel(int index){
         lineStream.clear();
         
 
-        gameObjects = new Tile* [horTiles * vertTiles];
+        gameObjects = new Tile* [ horTiles * vertTiles];
         
         for(int i=0; i<vertTiles; i++){
 
@@ -439,6 +394,14 @@ void Gauntlet::DrawLevel(){
     if(fOffsetX > horTiles  - nVisTilesX) fOffsetX = horTiles  - nVisTilesX;
     if(fOffsetY > vertTiles - nVisTilesY) fOffsetY = vertTiles - nVisTilesY;
 
+
+    // setting screen world bounds
+    screen_bound_BOT = ( nVisTilesY + fOffsetY ) * 16;
+    screen_bound_TOP = fOffsetY * 16;
+    screen_bound_RIGHT = ( nVisTilesX + fOffsetX ) * 16;
+    screen_bound_LEFT = fOffsetX * 16;
+
+
     // so tiles move smooth!
     fTileOffsetX = (fOffsetX - (int)fOffsetX)*16;
     fTileOffsetY = (fOffsetY - (int)fOffsetY)*16;
@@ -459,48 +422,56 @@ void Gauntlet::DrawLevel(){
 
         } 
 
+}
 
-    // display health, keys, and potions
-    DrawDecal({16*2,16*2},infoDecal1);
-    DrawStringDecal({16*2+8,16*2},std::to_string(p1->getHp()), olc::WHITE, {1.0f, 1.0f});
-    DrawStringDecal({16*2+8,16*2+8},std::to_string(p1->keyValue), olc::WHITE, {1.0f, 1.0f});
-    DrawStringDecal({16*2+24,16*2+8},std::to_string(p1->potions), olc::WHITE, {1.0f, 1.0f});
-    
+void Gauntlet::DrawInfo() 
+{
+
+    // display health/timer, keys, and potions
+    DrawDecal({ 16 * 2,16 * 2 }, infoDecal1);
+    DrawStringDecal({ 16 * 2 + 8,16 * 2 }, std::to_string(p1->getHp()), olc::WHITE, { 1.0f, 1.0f });
+    DrawStringDecal({ 16 * 2 + 8,16 * 2 + 8 }, std::to_string(p1->keyValue), olc::WHITE, { 1.0f, 1.0f });
+    DrawStringDecal({ 16 * 2 + 24,16 * 2 + 8 }, std::to_string(p1->potions), olc::WHITE, { 1.0f, 1.0f });
+
     // display world level
-    char buffer [12];
+    char buffer[12];                            // used 12 here because "%02d" has a max value of 12 chars
     sprintf(buffer, "%02d", nLevel);
 
-    DrawDecal({ScreenWidth()/2.0f, 24}, infoDecal2);
-    DrawStringDecal({ScreenWidth()/2.0f, 24}, std::string(buffer), olc::WHITE, {1.0f, 1.0f});    
+    DrawDecal({ ScreenWidth() / 2.0f, 24 }, infoDecal2);
+    DrawStringDecal({ ScreenWidth() / 2.0f, 24 }, std::string(buffer), olc::WHITE, { 1.0f, 1.0f });
+
+    // debug info
+    //olc::vf2d mouse = { (float) GetMouseX(), (float) GetMouseY()};
+    //std::cout << mouse.x << "  ,  " << mouse.y << std::endl;
 
 }
- 
+
 void Gauntlet::DrawEntities(){
 
-    olc::vf2d playerPosition = p1->getPosition();
 
-    // calculations for the camera to follow the player
-    int nVisTilesX = ScreenWidth()/16;
-    int nVisTilesY = ScreenHeight()/16;
+    // flicker for sprite animation timer
+    
+    if (std::chrono::duration_cast<ms>(clock::now() - mob_flicker).count() >= 500) 
+    {
+        mob_flicker = clock::now();
+        frameBool = !frameBool;
+    }
 
-    float offx = 0 , offy = 0;
-    float xScreenOffset = nVisTilesX / 2.0f;
-    float yScreenOffset = nVisTilesY / 2.0f;
 
-    if(playerPosition.x < xScreenOffset*16)
-        offx = xScreenOffset*16-playerPosition.x;
-    else if(playerPosition.x > (horTiles - xScreenOffset)*16)
-        offx = (horTiles - xScreenOffset)*16 - playerPosition.x;
+    static bool pbool = false;
+    if (std::chrono::duration_cast<ms>(clock::now() - player_flicker).count() >= 50 && p1->getVelocity().mag2() > 0.0f)
+    {
+        player_flicker = clock::now();
+        pbool = !pbool;
+    }
 
-    if(playerPosition.y < yScreenOffset*16)
-        offy = yScreenOffset*16-playerPosition.y;
-    else if(playerPosition.y > (vertTiles - yScreenOffset)*16)
-        offy = (vertTiles - yScreenOffset)*16 - playerPosition.y;
 
     // Draw Player
 
-    olc::vf2d screenPos = { (float)(ScreenWidth()/2.0f - offx) , (float)(ScreenHeight()/2.0f - offy) };
-    
+    olc::vf2d PlayerScreenPos, pos = p1->getPosition();
+
+    WorldToScreen(pos.x, pos.y, PlayerScreenPos.x, PlayerScreenPos.y);
+
     if(gamestate == GameState::OVER)
     {   
 
@@ -510,33 +481,15 @@ void Gauntlet::DrawEntities(){
 
     }else{
         
-        DrawPartialDecal( screenPos, decalList[1], { (float) p1->getDir()*16, (float) 16*frameBool}, {16, 16} );
+        DrawPartialDecal( PlayerScreenPos, decalList[1], { (float) p1->getDir()*16, (float) 16*pbool}, {16, 16} );
         
         if(drawOutline)
-            DrawDecal(screenPos, outlineDecal);
+            DrawDecal(PlayerScreenPos, outlineDecal);
     }
         
 
-    // Draw mobs
-    
-    int x0,y0,x1,y1;
-    float fOffsetX, fOffsetY;
 
-    float fCamPosX = playerPosition.x/16;
-    float fCamPosY = playerPosition.y/16;
-    
-    fOffsetX = fCamPosX - (float) nVisTilesX / 2.0f;
-    fOffsetY = fCamPosY - (float) nVisTilesY / 2.0f;
 
-    if(fOffsetX < 0) fOffsetX = 0;
-    if(fOffsetY < 0) fOffsetY = 0;
-    if(fOffsetX > horTiles  - nVisTilesX) fOffsetX = horTiles  - nVisTilesX;
-    if(fOffsetY > vertTiles - nVisTilesY) fOffsetY = vertTiles - nVisTilesY;
-    
-    x0  = fOffsetX;
-    y0  = fOffsetY;
-    x1 = fOffsetX + nVisTilesX;
-    y1 = fOffsetY + nVisTilesY;
 
     // draw mobs and projectiles
     for(auto &m : mobList){
@@ -544,24 +497,17 @@ void Gauntlet::DrawEntities(){
         if(m.dead == false)
         {
             olc::vf2d mobPos = m.getPosition();
+            olc::vf2d ScreenPos;
 
-            float moffx = playerPosition.x - mobPos.x;
-            float moffy = playerPosition.y - mobPos.y;
+            WorldToScreen(mobPos.x, mobPos.y, ScreenPos.x, ScreenPos.y);
 
-            float mdx = ScreenWidth() / 2.0f - offx - moffx;
-            float mdy = ScreenHeight()/ 2.0f - offy - moffy;
+            if(ScreenPos.x >= 0 && ScreenPos.x <= ScreenWidth())
+                if(ScreenPos.y >= 0 && ScreenPos.y <= ScreenHeight()){
 
-            if(mobPos.x >= x0*16 && mobPos.x < x1*16)
-                if(mobPos.y >= y0*16 && mobPos.y < y1*16){
-
-                    // DrawDecal( {  (float) mdx , (float) mdy } , decalList[2]);
-                    if(m.getType() == 35)
-                        DrawPartialDecal( { (float) mdx , (float) mdy } , decalList[ 2 ] , { (float) m.getDir()*16, (float)16*frameBool}, {16, 16} );     
-                    else if(m.getType() == 36)
-                        DrawPartialDecal( { (float) mdx , (float) mdy } , decalList[ 3 ] , { (float) m.getDir()*16, (float)16*frameBool}, {16, 16} );
+                    DrawPartialDecal( ScreenPos, decalList[ m.getType() - 33 ] , { (float) m.getDir()*16, (float)16*frameBool}, {16, 16} );     
 
                     if(drawOutline)
-                        DrawDecal({ (float) mdx , (float) mdy }, outlineDecal);
+                        DrawDecal(ScreenPos, outlineDecal);
 
                 }
         }
@@ -573,22 +519,19 @@ void Gauntlet::DrawEntities(){
 
         if(p.dead == false)
         {
-
             olc::vf2d pPos = p.getPosition();
+            olc::vf2d ScreenPos;
 
-            float poffx = playerPosition.x - pPos.x;
-            float poffy = playerPosition.y - pPos.y;
+            WorldToScreen(pPos.x, pPos.y, ScreenPos.x, ScreenPos.y);
 
-            float pdx = ScreenWidth() / 2.0f - offx - poffx;
-            float pdy = ScreenHeight()/ 2.0f - offy - poffy;
+            if (ScreenPos.x >= 0 && ScreenPos.x <= ScreenWidth())
+                if (ScreenPos.y >= 0 && ScreenPos.y <= ScreenHeight()) {
 
-            if(pPos.x >= x0*16 && pPos.x < x1*16)
-                if(pPos.y >= y0*16 && pPos.y < y1*16){
+                    DrawPartialDecal(ScreenPos, decalList[4], { (float)p.getDir() * 16,0 }, { 16, 16 });
 
-                    DrawPartialDecal( { (float) pdx , (float) pdy }, decalList[4], { (float) p.getDir()*16,0}, {16, 16} );
-                    
-                    if(drawOutline)
-                        DrawDecal({ (float) pdx , (float) pdy }, outlineDecal);
+                    if (drawOutline)
+                        DrawDecal(ScreenPos, outlineDecal);
+
                 }
 
         }
@@ -598,210 +541,387 @@ void Gauntlet::DrawEntities(){
 
 
 
-
-void Gauntlet::updatePlayer(float fElapsedTime)
+void Gauntlet::CheckCollisions(float fElapsedTime)
 {
-
-    olc::vf2d pPos = p1->getPosition(), vel = {0.0f, 0.0f};
-
-    direction dir = p1->getDir();
     
+    // collision check order ( doesnt really matter since it all happens before render and update , just how effecient is the question)
+    /// player vs tiles
+    /// mobs vs tiles           -- wont need this because mobs will have different algorithm for movement, game logic will handle this
+    /// projectiles vs tiles
+    /// 
+    /// mobs vs player
+    /// mobs vs projectiles
+
+
+    /// here we make a general lambda function which checks the tiles around a dynamic object
+    /// within a 2 block radius
+    auto CheckDynamicVsTiles = [&](Dynamic* pDyn) 
+    {
+        
+        // check for collisiosns then sort collisions by distance
+        olc::vf2d cp, cn, pos = pDyn->getPosition();
+        float t = 0, min_t = INFINITY;
+        std::vector<std::pair<int, float>> z;
+
+        int left_bound, right_bound;
+        int top_bound, bot_bound;
+
+        left_bound = int(pos.x / 16) - 2;
+        right_bound = int(pos.x / 16) + 2;
+        top_bound = int(pos.y / 16) - 2;
+        bot_bound = int(pos.y / 16) + 2;
+
+        if (left_bound < 0) left_bound = 0;
+        if (right_bound > horTiles) right_bound = horTiles;
+        if (top_bound < 0) top_bound = 0;
+        if (bot_bound > vertTiles) bot_bound = vertTiles;
+
+
+        for (int i = left_bound; i < right_bound; i++) {
+            for (int j = top_bound; j < bot_bound; j++)
+            {
+
+                if (DynamicVsTile(pDyn, fElapsedTime, *gameObjects[j * horTiles + i], cp, cn, t))
+                {
+                    z.push_back({ j * horTiles + i,t });
+                }
+            }
+        }
+
+        // sort the list z by distance 
+        std::sort(z.begin(), z.end(), [](const std::pair<int, float>& a, const std::pair<int, float>& b)
+            {
+                return a.second < b.second;
+            });
+
+        // resolve collisions in proper order 
+        for (auto j : z)
+            ResColl_DynamicVsTile(pDyn, fElapsedTime, gameObjects[j.first], j.first);
+
+    };
+
+    // using the lambda CheckDynVsTiles we can just call it to handle our collisions for tiles
+
+    // player vs tiles
+    CheckDynamicVsTiles(p1);
+    // projs vs tiles
+    for (auto& p : projList)
+        CheckDynamicVsTiles(&p);
+    
+
+    // mob collisions
+    for (auto& m : mobList)
+    {
+        // mobs vs player
+        if (TileVsTile(&m, p1))
+        {
+            Resolve_MobVsDynamic(&m, fElapsedTime, p1);
+        }
+
+        // mobs vs projectiles
+        for (auto& p : projList) 
+        {
+            if (TileVsTile(&m, &p))
+            {
+                Resolve_MobVsDynamic(&m, fElapsedTime, &p);
+            }
+        }
+    }
+
+
+}
+
+void Gauntlet::GatherInputs() 
+{
     // get user input
+    olc::vf2d vel = {0.0f , 0.0f};
+    direction dir, old_dir = p1->getDir();
 
+    uint64_t dtNE = 0, dtNW = 0, dtSE = 0, dtSW = 0;
+    uint64_t dt = 35;
 
-
-    uint64_t dtNE= 0, dtNW = 0, dtSE = 0, dtSW = 0;
-
-    uint64_t dt = 100;
-    
-    if(GetKey(olc::A).bHeld)
+    // sets the *press vars to current wall time
+    if (GetKey(olc::A).bPressed)
     {
         Apress = clock::now();
-        vel += {-1.0f , 0.0f};
     }
-
-    if(GetKey(olc::S).bHeld)
+    if (GetKey(olc::S).bPressed)
     {
         Spress = clock::now();
-        vel += {0.0f , 1.0f};
     }
-
-    if(GetKey(olc::D).bHeld)
+    if (GetKey(olc::D).bPressed)
     {
         Dpress = clock::now();
-        vel += {1.0f , 0.0f};
     }
-
-    if(GetKey(olc::W).bHeld)
+    if (GetKey(olc::W).bPressed)
     {
         Wpress = clock::now();
-        vel += {0.0f , -1.0f};
     }
 
-    // if(Wpress != std::chrono::time_point::min() && Apress != std::chrono::time_point::min())
-    dtNW = std::chrono::duration_cast<ms>( std::chrono::abs(Wpress - Apress) ).count();
-    dtSW = std::chrono::duration_cast<ms>( std::chrono::abs(Spress - Apress) ).count();
-    dtNE = std::chrono::duration_cast<ms>( std::chrono::abs(Wpress - Dpress) ).count();
-    dtSE = std::chrono::duration_cast<ms>( std::chrono::abs(Spress - Dpress) ).count();
+    // if key is being held we can just add the velocities and determine direction (main source of input)
+    if (GetKey(olc::A).bHeld)
+    {
+        vel += {-1.0f, 0.0f};
+        dir = direction::W;
+    }
+    if (GetKey(olc::S).bHeld)
+    {
+        vel += {0.0f, 1.0f};
+        dir = direction::S;
+    }
+    if (GetKey(olc::D).bHeld)
+    {
+        vel += {1.0f, 0.0f};
+        dir = direction::E;
+    }
+    if (GetKey(olc::W).bHeld)
+    {
+        vel += {0.0f, -1.0f};
+        dir = direction::N;
+    }
+
+    // sets the *release vars to current wall time
+    if (GetKey(olc::A).bReleased)
+    {
+        Arelease = clock::now();
+    }
+    if (GetKey(olc::S).bReleased)
+    {
+        Srelease = clock::now();
+    }
+    if (GetKey(olc::D).bReleased)
+    {
+        Drelease = clock::now();
+    }
+    if (GetKey(olc::W).bReleased)
+    {
+        Wrelease = clock::now();
+    }
 
 
-    // if( abs(dtNE) <= dt && Wpress != Dpress)
-    //     dir = direction::NE;
-    // else if( abs(dtNW) <= dt && Wpress != Apress )
-    //     dir = direction::NW;
-    // else if( abs(dtSE) <= dt && Spress != Dpress )
-    //     dir = direction::SE;
-    // else if( abs(dtSW) <= dt && Spress != Apress )
-    //     dir = direction::SW;
+
+    // calculate released times to see if direction needs to be modified
+    // use this to basically allow for fuzzy timing with control inputs
+    dtNW = std::chrono::duration_cast<ms>(std::chrono::abs(Wrelease - Arelease)).count();
+    dtSW = std::chrono::duration_cast<ms>(std::chrono::abs(Srelease - Arelease)).count();
+    dtNE = std::chrono::duration_cast<ms>(std::chrono::abs(Wrelease - Drelease)).count();
+    dtSE = std::chrono::duration_cast<ms>(std::chrono::abs(Srelease - Drelease)).count();
 
 
+    // here we can get the direction if the HELD conditions were met
+    if (vel.y < 0.0f) {
 
-
-
-
-
-
-
-
-    if( vel.y < 0.0f )
-       
-        if( vel.x > 0.0f )
+        if (vel.x > 0.0f)
             dir = direction::NE;
-        else if( vel.x < 0.0f )
-             dir = direction::NW;
+        else if (vel.x < 0.0f)
+            dir = direction::NW;
         else
             dir = direction::N;
 
-    else if( vel.y > 0.0f )
+    }
+    else if (vel.y > 0.0f) {
 
-        if( vel.x > 0.0f )
+        if (vel.x > 0.0f)
             dir = direction::SE;
-        else if( vel.x < 0.0f )
-             dir = direction::SW;
+        else if (vel.x < 0.0f)
+            dir = direction::SW;
         else
             dir = direction::S;
-    
-    else if( vel.y == 0.0f )
 
-        if(vel.x > 0.0f)
+    }
+    else if (vel.y == 0.0f) {
+
+        if (vel.x > 0.0f)
             dir = direction::E;
-        else if(vel.x < 0.0f)
+        else if (vel.x < 0.0f)
             dir = direction::W;
+        else /*if( vel.x == 0.0f )*/ 
+            dir = direction::NONE;
+
+    }
+
+    
+    // todo: make sure it is most recent
+    //uint64_t arr[4] = { dtNW, dtSW, dtNE, dtSE };
+    int index = -1;
+
+    // gets the most recent pair of keys released
+    if (Wrelease > Srelease)
+    {
+        // w after s
+        if (Arelease < Drelease)
+        {
+            // D after A
+            //NE
+            index = 0;
+        }
+        else {
+            index = 1;
+        }
+    }
+    else
+    {
+        // w before s
+        if (Arelease < Drelease)
+        {
+            // D before A 
+            index = 2;
+        }
+        else {
+            index = 3;
+        }
+    }
 
 
+    if (index == 0 && dtNE <= dt && Wrelease != minTime && Drelease != minTime)
+    {
+        dir = direction::NE;
+
+    }
+    if (index == 1 && dtNW <= dt && Wrelease != minTime && Arelease != minTime) {
+
+        dir = direction::NW;
+
+    }
+    if (index == 2 && dtSE <= dt && Srelease != minTime && Drelease != minTime) {
+
+        dir = direction::SE;
+
+    }
+    if (index == 3 && dtSW <= dt && Srelease != minTime && Arelease != minTime) {
+
+        dir = direction::SW;
+
+    }
 
 
-
-
-
-    p1->setDir(dir);
-    // vel = vel * p1->getDirectionVector();
-
-    // ==============================unit collision===========================
+    // this means the velocity was not 0
+    if (dir != direction::NONE)
+    {
+        p1->setDir(dir);
+        //vel = p1->getDirectionVector();
+    }
+    else
+    {
+        p1->setDir(old_dir);
+    }
 
     vel *= p1->getSpeed();
     p1->setVelocity(vel);
 
 
-    // sort collisions by distance
-    olc::vf2d cp, cn;
-    float t=0, min_t = INFINITY;
-    std::vector<std::pair<int,float>> z;
-
-    // work out collisions
-
-    /* take the player position, get a chunk of the world around the player
-    then from that chunk add tile that can be interacted with into a vector list
-    then for each object in the list check for collisions
-    */ 
-
-    int left_bound, right_bound;
-    int top_bound, bot_bound;
-
-    left_bound  = int( pPos.x / 16) - 2;
-    right_bound = int( pPos.x / 16) + 2;
-    top_bound   = int( pPos.y / 16) - 2;
-    bot_bound   = int( pPos.y / 16) + 2;
-
-    if(left_bound < 0) left_bound = 0;
-    if(right_bound > horTiles) right_bound = horTiles; 
-    if(top_bound < 0) top_bound = 0;
-    if(bot_bound > vertTiles) bot_bound = vertTiles;
-
-    for(int i=left_bound; i<right_bound; i++)
-        for(int j=top_bound; j<bot_bound; j++){
-
-            if(DynamicVsTile(p1, fElapsedTime, *gameObjects[j*horTiles+i], cp, cn, t))
-            {
-                z.push_back({j*horTiles+i,t});
-            }
-        }   
-
-
-    // sort the list z by distance 
-    std::sort(z.begin(), z.end(), [](const std::pair<int, float>& a, const std::pair<int, float>& b)
-    {
-        return a.second < b.second;
-    });
-
-
-    // resolve collisions in proper order 
-    for(auto j : z)
-        ResColl_DynamicVsTile(p1, fElapsedTime, gameObjects[j.first], j.first);
-
-
-     // player vs mobs
-    for(auto &m : mobList)
-    {
-        olc::vf2d mpos = m.getPosition();
-        if( mpos.mag() - p1->getPosition().mag() < 16*8 )
-        {
-            ResColl_EntityVsDynamic(p1, fElapsedTime, &m);
-        }
-    }
-
-
     // create projectile on this command by player
     // if( oneSecond && (GetKey(olc::SPACE).bPressed || GetKey(olc::SPACE).bHeld || GetKey(olc::SPACE).bReleased) ){
-    if( GetKey(olc::SPACE).bPressed && !projShot ){
+    if ( GetKey(olc::SPACE).bPressed ) {
 
-        Proj p(37);
+        // && !projShot --> is onesec timer basically
 
-        projShot = true;
-        p.dead = false;
-        p.setDir(p1->getDir());
-
-        vel = p1->getDirectionVector();
-
-        p.setPosition(pPos + p1->getSize()/2.0f - p.getSize()/2.0f );
-        p.setVelocity( vel * p.getSpeed());
-
-        bool Overlap = false;
-        for(int i=0; i<vertTiles*horTiles; i++)
+        int projCount = 0;
+        for (size_t i = 0; i < projList.size(); i++) 
         {
-            if(gameObjects[i]->getType() != 19)
-                Overlap = TileVsTile(&p, gameObjects[i]);
+            int pType = projList.at(i).getType();
 
-            if(Overlap)
-                break;
+            if (pType >= 36 && pType <= 40 && !projList.at(i).dead) 
+            {
+                projCount++;
+            }
         }
 
-        if(Overlap == false)
-            projList.push_back(p);
+        if (projCount == 0 || !projShot)
+        {
+            Proj p(37);
+
+            projShot = true;
+            p.dead = false;
+            p.setDir(p1->getDir());
+
+            vel = p1->getDirectionVector();
+
+            p.setPosition(p1->getPosition() + p1->getSize() / 2.0f - p.getSize() / 2.0f);
+            p.setVelocity(vel* p.getSpeed());
+
+            bool Overlap = false;
+            for (int i = 0; i < vertTiles * horTiles; i++)
+            {
+                if (gameObjects[i]->getType() != 19)
+                    Overlap = TileVsTile(&p, gameObjects[i]);
+
+                if (Overlap)
+                    break;
+            }
+
+            if (Overlap == false)
+                projList.push_back(p);
+
+        }
 
     }
 
-    // update player pos
-    p1->update(fElapsedTime);
+
+
+    if (GetKey(olc::ESCAPE).bPressed) {
+        gamestate = GameState::PAUSED;
+    }
 
 }
 
+
+
+void Gauntlet::GetScreenWorldBounds()
+{
+        
+    olc::vf2d playerPosition = p1->getPosition();
+    int nVisTilesX = ScreenWidth() / 16;
+    int nVisTilesY = ScreenHeight() / 16;
+
+    offx = 0, offy = 0;
+    float xScreenOffset = nVisTilesX / 2.0f;
+    float yScreenOffset = nVisTilesY / 2.0f;
+
+    if (playerPosition.x < xScreenOffset * 16)
+        offx = xScreenOffset * 16 - playerPosition.x;
+    else if (playerPosition.x > (horTiles - xScreenOffset) * 16)
+        offx = (horTiles - xScreenOffset) * 16 - playerPosition.x;
+
+    if (playerPosition.y < yScreenOffset * 16)
+        offy = yScreenOffset * 16 - playerPosition.y;
+    else if (playerPosition.y > (vertTiles - yScreenOffset) * 16)
+        offy = (vertTiles - yScreenOffset) * 16 - playerPosition.y;
+
+
+    offx = ScreenWidth() / 2.0f - offx - playerPosition.x;
+    offy = ScreenHeight() / 2.0f - offy - playerPosition.y;
+
+}
+
+void Gauntlet::ScreenToWorld(float sx, float sy, float& wx, float& wy)
+{
+    wx = sx - offx;
+    wy = sy - offy;
+
+}
+
+void Gauntlet::WorldToScreen(float wx, float wy, float& sx, float& sy) 
+{   
+    sx = wx + offx;
+    sy = wy + offy;
+}
+
+
+
+
 void Gauntlet::updateMobs(float fElapsedTime){
 
-    // std::cout << mobList.size() << std::endl;
+    // a timer to move the mobs
+    mob_current_time = clock::now();
+    uint64_t mob_dt = std::chrono::duration_cast<ms>(std::chrono::abs(mob_current_time - mob_last_time)).count();
 
+    // compresses the mob vector
     for(size_t i = 0; i < mobList.size(); i++)
     {
+
+        if (mobList.at(i).getHp() <= 0)
+            mobList.at(i).dead = true;
 
         if(mobList.at(i).dead)
         {
@@ -811,177 +931,199 @@ void Gauntlet::updateMobs(float fElapsedTime){
     }
 
 
-    for( auto &m : mobList)
+    // z.first() holds the index, z.second holds the distance to player
+    std::vector<std::pair<int, float>> z;
+    for (size_t i = 0; i < mobList.size(); i++)
     {
-        // dont waste time on dead mobs
-        if(m.getHp() <= 0)
-            m.dead = true;
+        float dx = mobList.at(i).getPosition().mag() -  p1->getPosition().mag();
+        dx = std::abs(dx);
 
-        if(!m.dead)
+        z.push_back( {(int)i, dx} );
+    }
+
+    std::sort(z.begin(), z.end(), [](const std::pair<int, float>& a, const std::pair<int, float>& b)
         {
-            
-            // get direction to move from algorithm
-            olc::vf2d pos = m.getPosition(), vel;
+            return a.second < b.second;
+        });
 
-            // if player is in a range of mob , it will want to move to them
-            if( (pos - p1->getPosition()).mag() <= 16*8)
+
+
+
+    olc::vf2d ppos = p1->getPosition();
+
+    for( auto j : z )
+    {
+        // get direction to move from algorithm
+        olc::vf2d pos = mobList.at(j.first).getPosition(), vel = { 0.0f, 0.0f }, moveDir;
+
+        
+        // see if mob is on the screen
+        bool onScreen = false;
+        olc::vf2d screenPos;
+        WorldToScreen(pos.x, pos.y, screenPos.x, screenPos.y);
+        
+        if (screenPos.x >= 0 && screenPos.x <= ScreenWidth())
+            if (screenPos.y >= 0 && screenPos.y <= ScreenHeight())
+                onScreen = true;
+
+
+ 
+        // determine move direction    
+        moveDir = ppos - pos;
+            
+        if( onScreen )
+        {
+            mobList.at(j.first).setVelocity(moveDir);
+            direction dir = mobList.at(j.first).getVelocityDirection();
+            mobList.at(j.first).setDir(dir);
+            mobList.at(j.first).setVelocity(vel);
+            vel = mobList.at(j.first).getDirectionVector();
+
+            if (std::abs(moveDir.x) < 7)
+                vel.x = 0.0f;
+            if (std::abs(moveDir.y) < 7)
+                vel.y = 0.0f;
+
+            mobList.at(j.first).setVelocity(vel);
+            dir = mobList.at(j.first).getVelocityDirection();
+            mobList.at(j.first).setDir(dir);
+
+
+
+            vel *= 8.0f / fElapsedTime;
+
+            olc::vf2d nextp = pos + vel * fElapsedTime;
+            olc::vf2d nextp_xonly = pos + olc::vf2d(vel.x, 0.0f) * fElapsedTime;
+            olc::vf2d nextp_yonly = pos + olc::vf2d(0.0f, vel.y) * fElapsedTime;
+
+            auto PosCollision = [&](olc::vf2d pos)
             {
-                // get the move direction from player 
-                vel = (p1->getPosition() - pos).norm();
-                vel *= m.getSpeed(); 
 
-            }else{
+                int x0 = (int)pos.x, y0 = (int)pos.y;
+                Mob* mTile = new Mob(35, pos.x, pos.y);
 
-                vel = {0.0f, 0.0f};
-            }
+                int left_bound, right_bound;
+                int top_bound, bot_bound;
+
+                left_bound = int(pos.x / 16) - 2;
+                right_bound = int(pos.x / 16) + 2;
+                top_bound = int(pos.y / 16) - 2;
+                bot_bound = int(pos.y / 16) + 2;
+
+                if (left_bound < 0) left_bound = 0;
+                if (right_bound > horTiles) right_bound = horTiles;
+                if (top_bound < 0) top_bound = 0;
+                if (bot_bound > vertTiles) bot_bound = vertTiles;
 
 
-            
-
-
-            // unit collision
-
-            m.setVelocity(vel);
-
-            // collision detection here 
-            olc::vf2d cp, cn;
-            float t=0, min_t = INFINITY;
-            std::vector<std::pair<int,float>> z;
-            
-            int left_bound, right_bound;
-            int top_bound, bot_bound;
-
-            left_bound  = int(pos.x /16) - 2;
-            right_bound = int(pos.x /16) + 2;
-            top_bound   = int(pos.y /16) - 2;
-            bot_bound   = int(pos.y /16) + 2;
-
-            if(left_bound < 0) left_bound = 0;
-            if(right_bound > horTiles) right_bound = horTiles; 
-            if(top_bound < 0) top_bound = 0;
-            if(bot_bound > vertTiles) bot_bound = vertTiles;
-            
-            for(int i=left_bound; i<right_bound; i++)
-                for(int j=top_bound; j<bot_bound; j++){
-
-                    if(DynamicVsTile(&m, fElapsedTime, *gameObjects[j*horTiles+i], cp, cn, t))
+                for (int i = left_bound; i < right_bound; i++) {
+                    for (int j = top_bound; j < bot_bound; j++)
                     {
-                        z.push_back({j*horTiles+i,t});
+
+                        if (TileVsTile(gameObjects[j * horTiles + i], mTile) && gameObjects[j * horTiles + i]->getType() != 19)
+                        {
+                            delete mTile;
+                            return true;
+                        }
+
                     }
                 }
 
-            std::sort(z.begin(), z.end(), [](const std::pair<int, float>& a, const std::pair<int, float>& b)
-            {
-                return a.second < b.second;
-            });
-
-            // resolve collisions in proper order 
-            for(auto& j : z)
-                ResColl_DynamicVsTile(&m, fElapsedTime, gameObjects[j.first], j.first);
-
-
-
-            // mobs vs other mobs
-
-            for(int j=0; j< mobList.size(); j++)
-            {
+                for (auto j2 : z)
+                {
+                    if (j2.first != j.first)
+                    {
+                        if (TileVsTile(mTile, &mobList.at(j2.first)))
+                        {
+                            delete mTile;
+                            return true;
+                        }
+                    }
+                }
                 
-                // if(  m.getId() != mobList[j].getId())
-                // {
-                ResColl_EntityVsDynamic(&m, fElapsedTime, &mobList[j]);
-                // }
+                delete mTile;
+                return false;
+            };
+
+
+            bool can_move_x = !PosCollision(nextp_xonly);
+            bool can_move_y = !PosCollision(nextp_yonly);
+
+            // prio is always XY because it is the closest distance
+            if (PosCollision(nextp))
+            {
+
+                if (can_move_x)
+                {
+                    if (can_move_y)
+                    { 
+                        // pick the direction which makes distance the shortest
+                        if ((ppos - nextp_xonly).mag() < (ppos - nextp_yonly).mag())
+                        {
+                            vel = { vel.x , 0.0f };
+                        }
+                        else
+                        {
+                            vel = { 0.0f, vel.y };
+                        }
+                    }
+                    else 
+                    {
+                        vel = { vel.x , 0.0f };
+                    }
+
+                }
+                else if (can_move_y)
+                {
+                    vel = {0.0f, vel.y};
+                }
+                else
+                {
+                    vel = {0.0f, 0.0f};
+                }
             }
 
-            // finally update the mob after handleing potential collisions
-            m.update(fElapsedTime);
+            // handel the constant moving back and forth for mobs 
+            float cur_dx = (ppos - pos).mag();
+            float next_dx = (ppos - (pos + vel * fElapsedTime)).mag();
+            
+            if ( cur_dx <=  next_dx )
+            {
+                vel = {0.0f,0.0f};
+            }
 
         }
+
+        mobList.at(j.first).setVelocity(vel);
+
+        // finally update the mob after handleing potential collisions
+        // if the move time is good then move to the next position possible
+        if (mob_dt >= 500)
+        {
+            mob_last_time = mob_current_time;
+            // this will actually move the mob based on its set vel
+            mobList.at(j.first).update(fElapsedTime);
+        }
+
+        
     }
 }
 
 void Gauntlet::updateProjectiles(float fElapsedTime)
 {   
 
+    // compress the projList vec
     for(size_t i = 0; i < projList.size(); i++)
     {
-
         if(projList.at(i).dead)
         {
             projList.erase(projList.begin()+i);
         }
-
     }
-
-
-    // ==============================unit collision===========================
-
-
-    olc::vf2d pos, vel;
 
     for( auto &p : projList )
     {            
-        if(!p.dead)
-        {
-            pos = p.getPosition();
-            vel = p.getVelocity();
-            
-            // collision detection here 
-            olc::vf2d cp, cn;
-            float t=0, min_t = INFINITY;
-            std::vector<std::pair<int,float>> z;
-            
-            int left_bound, right_bound;
-            int top_bound, bot_bound;
-
-            left_bound  = int(pos.x /16) - 2;
-            right_bound = int(pos.x /16) + 2;
-            top_bound   = int(pos.y /16) - 2;
-            bot_bound   = int(pos.y /16) + 2;
-
-            if(left_bound < 0) left_bound = 0;
-            if(right_bound > horTiles) right_bound = horTiles; 
-            if(top_bound < 0) top_bound = 0;
-            if(bot_bound > vertTiles) bot_bound = vertTiles;
-            
-            for(int i=left_bound; i<right_bound; i++)
-                for(int j=top_bound; j<bot_bound; j++){
-
-                    if(DynamicVsTile(&p, fElapsedTime, *gameObjects[j*horTiles+i], cp, cn, t))
-                    {
-                        z.push_back({j*horTiles+i,t});
-                    }
-                }
-
-            std::sort(z.begin(), z.end(), [](const std::pair<int, float>& a, const std::pair<int, float>& b)
-            {
-                return a.second < b.second;
-            });
-
-            // resolve collisions in proper order 
-            for(auto& j : z)
-                ResColl_DynamicVsTile(&p, fElapsedTime, gameObjects[j.first], j.first);
-
-
-            
-            
-            
-            // projectiles vs mobs
-
-            for(auto &m : mobList)
-            {
-
-                olc::vf2d mpos = m.getPosition();
-
-                if( mpos.mag() - pos.mag() < 16*3 )
-                {
-                    ResColl_EntityVsDynamic(&m, fElapsedTime, &p);
-                }
-
-            }
-
-
-            p.update(fElapsedTime);
-        }
+        p.update(fElapsedTime);
     }
 
 }
@@ -990,9 +1132,10 @@ void Gauntlet::updateTiles(float fElapsedTime){
 
     for(int i=0; i < vertTiles*horTiles; i++)
     {
-
+        olc::vf2d tpos = gameObjects[i]->getPosition();
         int tileType = gameObjects[i]->getType();
-        if(tileType >= 26 && tileType <= 31)
+
+        if(tileType >= 26 && tileType <= 31 && (tpos - p1->getPosition()).mag() <= 16 * 13 )
         {
 
             int mType = 0;
@@ -1003,11 +1146,11 @@ void Gauntlet::updateTiles(float fElapsedTime){
 
             // make new mob in a postion 1 tile away from current tile position
 
-            if(curTime - spawnRate >= 0)
+            if(std::chrono::duration_cast<ms>(clock::now() - spawnrate).count() >= 1000)
             {
-
-                spawnRate *= 2;
                 
+                spawnrate = clock::now();
+
                 // get spawner pos
                 olc::vf2d mpos = gameObjects[i]->getPosition();
                 int x = mpos.x, y = mpos.y;
@@ -1023,7 +1166,7 @@ void Gauntlet::updateTiles(float fElapsedTime){
                 
                 auto tileIsFloor = [&](int index)
                 {                    
-                    bool noMobs = true;
+                    bool isFloor = true;
 
                     if(gameObjects[index]->getType() == 19)
                     {                     
@@ -1031,47 +1174,40 @@ void Gauntlet::updateTiles(float fElapsedTime){
                         {
                             if(  TileVsTile(&m, gameObjects[index])  )
                             {
-                                noMobs = false;
+                                isFloor = false;
                                 break;
                             }
                         }
                     }
+                    else
+                    {
+                        isFloor = false;
+                    }
 
-                    return noMobs;
+                    return isFloor;
                 };
 
 
-                if(tileIsFloor(nidx))
+                int indexes[4] = {nidx, eidx, sidx, widx};
+
+                for (auto& i : indexes)
                 {
-                    x = gameObjects[nidx]->getPosition().x;
-                    y = gameObjects[nidx]->getPosition().y;
 
-                }else if( tileIsFloor(eidx)){
-
-                    x = gameObjects[eidx]->getPosition().x;
-                    y = gameObjects[eidx]->getPosition().y;
-
-                }else if( tileIsFloor(sidx)){
-
-                    x = gameObjects[sidx]->getPosition().x;
-                    y = gameObjects[sidx]->getPosition().y;
-
-                }else if( tileIsFloor(widx)){
-
-                    x = gameObjects[widx]->getPosition().x;
-                    y = gameObjects[widx]->getPosition().y;
+                    if (tileIsFloor(i))
+                    {
+                        olc::vf2d pos = gameObjects[i]->getPosition();
+                        Mob m(mType, pos.x, pos.y);
+                        mobList.push_back(m);
+                        break;
+                    }
 
                 }
-
-                Mob m(mType, x, y);
-                mobList.push_back(m);                
+                              
                 
             }
         }   
     }
 }
-
-
 
 
 
@@ -1084,10 +1220,6 @@ bool Gauntlet::TileVsTile(const Tile* pt1, const Tile* pt2)
     return (t1Pos.x < t2Pos.x + t2Size.x && t1Pos.x + t1Size.x > t2Pos.x && t1Pos.y < t2Pos.y + t2Size.y && t1Pos.y + t1Size.y > t2Pos.y);
 }
 
-
-// RayVsTile returns true if a ray passing through the passed target Tile
-// this function also calculates the first contact_point for a ray and tile
-// along with the noraml vector for the contact surface 
 bool Gauntlet::RayVsTile(const olc::vf2d& ray_origin, const olc::vf2d& ray_dir, const Tile* target, olc::vf2d& contact_point, olc::vf2d& contact_normal, float& t_hit_near){
 
     contact_normal = {0,0};
@@ -1138,69 +1270,6 @@ bool Gauntlet::RayVsTile(const olc::vf2d& ray_origin, const olc::vf2d& ray_dir, 
 
 }
 
-bool Gauntlet::RayVsDynamic(const olc::vf2d& ray_origin, const olc::vf2d& ray_dir, const Dynamic* target, const float fTimeStep, olc::vf2d& contact_point, olc::vf2d& contact_normal, float& t_hit_near)
-{
-
-    // ray_origin is the expanded posistion
-    // ray_dir is the entity velocity * fTimeStep
-    // target is the Dynamic object 
-
-    contact_normal = {0,0};
-    contact_point = {0,0};
-
-    olc::vf2d invdir = 1.0f / ray_dir;
-    olc::vf2d t_near, t_far, pos, size, nextpos;
-
-    // olc::vf2d invdir2 = 1.0f / ray_dir;
-    // olc::vf2d 
-
-    pos = target->getPosition();
-    nextpos = pos + fTimeStep * target->getVelocity();
-    size = target->getSize();
-
-    t_near = (pos - ray_origin) * invdir;
-    t_far = (pos + size - ray_origin) * invdir;
-
-
-    if(std::isnan(t_far.y) || std::isnan(t_far.x)) return false;
-    if(std::isnan(t_near.y) || std::isnan(t_near.x)) return false;
-
-
-    if(t_near.x > t_far.x) std::swap(t_near.x, t_far.x);
-    if(t_near.y > t_far.y) std::swap(t_near.y, t_far.y);
-
-
-    if(t_near.x > t_far.y || t_near.y > t_far.x) return false;
-
-    
-    t_hit_near = std::max(t_near.x, t_near.y);
-
-    float t_hit_far = std::min(t_far.x, t_far.y);
-
-
-    if(t_hit_far < 0) return false;
-
-    contact_point = ray_origin + t_hit_far * ray_dir;
-
-    if(t_near.x > t_near.y)
-        if(invdir.x < 0)
-            contact_normal = {1, 0};
-        else
-            contact_normal = {-1, 0};
-    else if( t_near.x < t_near.y)
-        if(invdir.y < 0)
-            contact_normal = {0 , 1};
-        else
-            contact_normal = {0, -1};
-
-    return true;
-
-}
-
-
-
-// DynVsTile is used for Dynamic and Tile object collisions 
-// returns true if a collision will happen
 bool Gauntlet::DynamicVsTile(const Dynamic* pDyn, const float fTimeStep, const Tile& pTile, olc::vf2d& contact_point, olc::vf2d& contact_normal, float& contact_time){
 
     olc::vf2d dynVel = pDyn->getVelocity();
@@ -1216,28 +1285,6 @@ bool Gauntlet::DynamicVsTile(const Dynamic* pDyn, const float fTimeStep, const T
         return (contact_time >= 0.0f && contact_time <  1.0f);
     else
         return false;
-}
-
-bool Gauntlet::EntityVsDynamic(const Entity* pEnt, const float fTimeStep, const Dynamic& pDyn, olc::vf2d& contact_point, olc::vf2d& contact_normal, float& contact_time)
-{
-
-    olc::vf2d entVel = pEnt->getVelocity();
-    olc::vf2d dynVel = pDyn.getVelocity();
-
-    // niether are moving so no collosion can happen
-    // if(dynVel.mag() == 0.0f && entVel.mag() == 0.0f)
-    //     return false;
-
-    Dynamic expanded_target;
-    expanded_target.setPosition( pDyn.getPosition() - pEnt->getSize() / 2.0f );
-    expanded_target.setSize( pDyn.getSize() + pEnt->getSize() );
-    expanded_target.setVelocity(pDyn.getVelocity());
-
-    if(RayVsDynamic(pEnt->getPosition() + pEnt->getSize()/2.0f, entVel * fTimeStep, &expanded_target, fTimeStep, contact_point, contact_normal, contact_time))
-        return (contact_time >= 0.0f && contact_time < 1.0f);
-    else
-        return false;
-
 }
 
 bool Gauntlet::ResColl_DynamicVsTile(Dynamic* pDyn, const float fTimeStep, Tile* pTile, int index)
@@ -1363,88 +1410,37 @@ bool Gauntlet::ResColl_DynamicVsTile(Dynamic* pDyn, const float fTimeStep, Tile*
     return false;
 }
 
-bool Gauntlet::ResColl_EntityVsDynamic(Entity* pEnt, const float fTimeStep, Dynamic* pDyn)
+bool Gauntlet::Resolve_MobVsDynamic(Mob* m, const float fTimeStep, Dynamic* pDyn)
 {
-    olc::vf2d contact_point, contact_normal;
-    float contact_time = 0.0f;
+    int mType = m->getType();
+    int pType = pDyn->getType();
 
-    if(EntityVsDynamic(pEnt, fTimeStep, *pDyn, contact_point, contact_normal, contact_time))
+    if (pType == 34 && m->dead == false)
     {
-
-        int type = pEnt->getType(), dynType = pDyn->getType();
-
-        if( type == 34){
-
-
-            if((dynType == 35 || dynType == 36) && !pDyn->dead ){
-
-                auto getMob = [&](int id){
-                    
-                    int count = 0;
-                    for(auto &m : mobList){
-
-                        if(EntityVsDynamic(pEnt, fTimeStep, m, contact_point, contact_normal, contact_time))
-                            return count;
-                        
-                        count++;
-                    }
-
-                    return -1;
-
-                };
-
-                int idx = getMob(pDyn->getId());
-
-                if(idx != -1)
-                {
-                    mobList[idx].dead = true;
-                }
-                
-                pEnt->setHp(pEnt->getHp() - 15);
-
-            }else if(dynType == 40){
-
-                pDyn->dead = true;
-                pEnt->setHp( pEnt->getHp() - 50 );
-
-            }
-
-
-        }else if( (type == 35 || type == 36) ){
-            
-            // mob vs mob
-            if( (dynType == 35 || dynType == 36) && !pEnt->dead && !pDyn->dead)
-            {
-
-                // solidTile
-                olc::vf2d entVel = pEnt->getVelocity();
-                entVel += contact_normal * olc::vf2d(std::abs(entVel.x) , std::abs(entVel.y)) * (1 - contact_time);
-                pEnt->setVelocity(entVel);
-
-
-            }else if(dynType >= 37 && dynType <= 39){
-
-                // proj is dead
-                pDyn->dead = true;
-                pEnt->setHp(pEnt->getHp() - 100);
-                
-                if(pEnt->getHp() <= 0)
-                    pEnt->dead = true;
-
-            }
-
-
-
+        // player collision
+        p1->setHp(p1->getHp() - 15);
+        m->dead = true;
+    }
+    else if (pType >= 37 && pType <= 40 && pDyn->dead == false && m->dead == false)
+    {
+        // player projectile
+        if (mType == 35) 
+        {
+            pDyn->dead = true;
+            m->dead = true;
         }
-
-        return true;
+        else if (mType == 36)
+        {
+            pDyn->dead = true;
+            m->setHp(m->getHp() - 50);
+            
+            if (m->getHp() <= 0)
+                m->dead = true;
+        }
     }
 
-    return false;
+    return true;
 }
-
-
-
 
 
 

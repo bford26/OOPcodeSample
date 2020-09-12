@@ -4,7 +4,8 @@
 Resources::Resources(){}
 // Resources::~Resources(){}
 
-olc::Sprite* Resources::getSprite(std::string name){
+olc::Sprite* Resources::getSprite(std::string name)
+{
     return stringToSpriteMap[name];
 }
 
@@ -45,6 +46,10 @@ void Resources::loadSprites(){
 }
 
 
+size_t Resources::getSpriteCount()
+{
+    return stringToSpriteMap.size();
+}
 
 
 
