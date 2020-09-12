@@ -8,5 +8,6 @@ var classolc_1_1_platform =
     [ "SetWindowTitle", "classolc_1_1_platform.html#ab9ea28ecd660730810463dd6c68b73fd", null ],
     [ "StartSystemEventLoop", "classolc_1_1_platform.html#af58e24a992339020fa1ebf58a224b209", null ],
     [ "ThreadCleanUp", "classolc_1_1_platform.html#a0e4e37ccc06ae7f3251b7a53ce839c13", null ],
-    [ "ThreadStartUp", "classolc_1_1_platform.html#ace0ea54aaa50143628b5fd41851b578f", null ]
+    [ "ThreadStartUp", "classolc_1_1_platform.html#ace0ea54aaa50143628b5fd41851b578f", null ],
+    [ "ptrPGE", "classolc_1_1_platform.html#a43a4a5eaaf20384b9cef6aec6e75dbbd", null ]
 ];

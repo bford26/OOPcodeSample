@@ -10,13 +10,15 @@ file_depth = ../..
 
 # SUB_DIRS = $(filter %/, $(shell ls -F ./))
 
-LIBS  = -lstdc++fs
-LIBS += -luser32
-LIBS += -lgdi32
-LIBS += -lopengl32
-LIBS += -lgdiplus
-LIBS += -lShlwapi
+# LIBS  = -lstdc++fs
+# LIBS += -luser32
+# LIBS += -lgdi32
+# LIBS += -lopengl32
+# LIBS += -lgdiplus
+# LIBS += -lShlwapi
 
+# linux based
+LIBS = -lX11 -lGL -lpthread -lpng -lstdc++fs
 
 includes  = ./../gauntlet/
 includes += ./../tile/

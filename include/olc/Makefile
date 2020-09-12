@@ -11,12 +11,13 @@ LIBS += -lgdiplus
 LIBS += -lShlwapi
 
 # Used only with MINGW if required
-# LIBS += -lmingw32  
+# LIBS += -lmingw32 
+# LIBS += -lglu32 
 # LIBS += -mwindows
-# LIBS += -L/mingw64/lib
+# LIBS += -L/mingw64/include
 
 # linux based
-LIBS = -lX11 -lGL -lpthread -lpng
+LIBS += -lX11 -lGL -lpthread -lpng -lstdc++fs
 
 # gets a list of all subsequent dirs while excluding the object folders
 DIRS  = $(patsubst %/, %, $(filter-out obj/, $(filter %/, $(shell ls -F))))

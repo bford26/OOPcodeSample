@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['gauntlet_43',['Gauntlet',['../class_gauntlet.html',1,'']]]
+  ['gauntlet_545',['Gauntlet',['../class_gauntlet.html',1,'']]]
 ];

@@ -1,4 +1,4 @@
-#include "projectile.h"
+#include "proj.h"
 
 Proj::Proj(int type_){
 

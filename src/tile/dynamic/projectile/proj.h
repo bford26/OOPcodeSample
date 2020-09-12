@@ -3,6 +3,9 @@
 
 #include "dynamic.h"
 
+/**
+* @brief just a sub type of dynamic, but has useful constructor
+*/
 class Proj : public Dynamic {
 
 public:

@@ -1,4 +1,23 @@
 var searchData=
 [
-  ['floor_7',['Floor',['../class_floor.html',1,'']]]
+  ['c_26',['C',['../namespaceolc.html#aa26a067cf0db83f0b1dd587036a64be7aaa5fe91e0948a39a142504c1f9067549',1,'olc']]],
+  ['checkcollisions_27',['CheckCollisions',['../class_gauntlet.html#a5cac37ed8b2f3eaa4ac54d52397da53b',1,'Gauntlet']]],
+  ['clear_28',['Clear',['../classolc_1_1_pixel_game_engine.html#aeb70b40809815fab4e1017e25c7ab161',1,'olc::PixelGameEngine']]],
+  ['clearbuffer_29',['ClearBuffer',['../classolc_1_1_renderer.html#a921406bc341efd881ca510c64cebdc26',1,'olc::Renderer::ClearBuffer()'],['../classolc_1_1_pixel_game_engine.html#aed9a3f6bd349e091728a329ee42932bf',1,'olc::PixelGameEngine::ClearBuffer()']]],
+  ['clock_30',['clock',['../class_gauntlet.html#aa4b195ddb65047993334b695f15257c7',1,'Gauntlet']]],
+  ['colours_31',['colours',['../structolc_1_1_decal_triangle_instance.html#ab0a3d8548687537a16da5ab928562962',1,'olc::DecalTriangleInstance']]],
+  ['configure_2etxt_32',['configure.txt',['../configure_8txt.html',1,'']]],
+  ['construct_33',['Construct',['../classolc_1_1_pixel_game_engine.html#a01bfbfbe774817231d09e2eb68f83100',1,'olc::PixelGameEngine']]],
+  ['consumable_34',['Consumable',['../class_consumable.html',1,'Consumable'],['../class_consumable.html#a4f5ef8159dfbb9bb60b90b94a07b0acd',1,'Consumable::Consumable()']]],
+  ['create_35',['Create',['../classolc_1_1_renderable.html#ad5b5b8d06c4a6a955590ad55c3bd7162',1,'olc::Renderable']]],
+  ['createdevice_36',['CreateDevice',['../classolc_1_1_renderer.html#a28c87db87f8fd9b0f356db5d01499992',1,'olc::Renderer']]],
+  ['creategraphics_37',['CreateGraphics',['../classolc_1_1_platform.html#a2e951cdc0d8fd9bb68f05b33f1fd0450',1,'olc::Platform']]],
+  ['createlayer_38',['CreateLayer',['../classolc_1_1_pixel_game_engine.html#ae15ffa0503e2893aad7001aa2f5769b7',1,'olc::PixelGameEngine']]],
+  ['createtexture_39',['CreateTexture',['../classolc_1_1_renderer.html#aea08187611945ccb5ca2397b8350994b',1,'olc::Renderer']]],
+  ['createwindowpane_40',['CreateWindowPane',['../classolc_1_1_platform.html#a4966327ca7d5ff2b855b3a4eaf0f88f2',1,'olc::Platform']]],
+  ['cross_41',['cross',['../structolc_1_1v2d__generic.html#ab32b6239e2765cf1ed4dfc2b30905eb6',1,'olc::v2d_generic']]],
+  ['ctrl_42',['CTRL',['../namespaceolc.html#aa26a067cf0db83f0b1dd587036a64be7ae7e6e69075c36b0e44309aae888b86dc',1,'olc']]],
+  ['cur_5ftime_43',['cur_time',['../class_gauntlet.html#a5acdc1f813bf3abf52d3b92813e4d68e',1,'Gauntlet']]],
+  ['custom_44',['CUSTOM',['../structolc_1_1_pixel.html#ae9012164940526ddb09b217dbbddfd65aed57164e9f056c1af912b3069eb45deb',1,'olc::Pixel']]],
+  ['cyan_45',['CYAN',['../namespaceolc.html#a43ffa41e9a4a260b86da82b823e6a252',1,'olc']]]
 ];

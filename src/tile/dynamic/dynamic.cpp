@@ -5,7 +5,7 @@ Dynamic::Dynamic(){
     size = {15.0f, 15.0f};
 }
 
-Dynamic::~Dynamic(){}
+//Dynamic::~Dynamic(){}
 
 olc::vf2d Dynamic::getVelocity() const {
     return vel;
@@ -80,14 +80,14 @@ olc::vf2d Dynamic::getDirectionVector(){
         vec.y = 1;
     }
 
-    return vec.norm();
+    return vec;
 
 }
 
 direction Dynamic::getVelocityDirection(){
 
     direction dir = Dynamic::getDir();
-    olc::vf2d v = Dynamic::getVelocity().norm();
+    olc::vf2d v = Dynamic::getVelocity();
 
     if(v.x > 0)
     {

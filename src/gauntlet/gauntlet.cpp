@@ -467,7 +467,7 @@ void Gauntlet::DrawLevel(){
     DrawStringDecal({16*2+24,16*2+8},std::to_string(p1->potions), olc::WHITE, {1.0f, 1.0f});
     
     // display world level
-    char buffer [2];
+    char buffer [12];
     sprintf(buffer, "%02d", nLevel);
 
     DrawDecal({ScreenWidth()/2.0f, 24}, infoDecal2);

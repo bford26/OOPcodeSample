@@ -12,5 +12,6 @@ var classolc_1_1_renderer =
     [ "PrepareDevice", "classolc_1_1_renderer.html#a7d97cab172e59d23a2587f636c9b12b7", null ],
     [ "PrepareDrawing", "classolc_1_1_renderer.html#a04c56d76c76ab50f5f06b9b537e9d98d", null ],
     [ "UpdateTexture", "classolc_1_1_renderer.html#a1512e2939b94f6fdb58bbf152ac0e4e5", null ],
-    [ "UpdateViewport", "classolc_1_1_renderer.html#abc873336dd8f9079dc26f92ce0f95748", null ]
+    [ "UpdateViewport", "classolc_1_1_renderer.html#abc873336dd8f9079dc26f92ce0f95748", null ],
+    [ "ptrPGE", "classolc_1_1_renderer.html#a89f800c14ab1b070408c17e2589e02a1", null ]
 ];

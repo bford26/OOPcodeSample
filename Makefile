@@ -11,8 +11,10 @@ compile:
 	done
 
 clean:
+	rm -f demo
+
 	@for dir in $(DIRS); do \
 		(cd $$dir; if [ -f ./Makefile ]; then $(MAKE) clean; fi;); \
 	done
 
-	rm -f demo
+	

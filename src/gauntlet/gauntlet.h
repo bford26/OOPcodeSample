@@ -74,7 +74,7 @@ private:
     uint64_t time_diff;
 
 
-private:aw
+private:
 
     // input timing
     clock::time_point Wpress, Apress, Spress, Dpress, minTime;
